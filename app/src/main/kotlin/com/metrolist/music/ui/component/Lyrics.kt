@@ -921,6 +921,7 @@ fun Lyrics(
                                 menuState.show {
                                     LyricsMenu(
                                         lyricsProvider = { lyricsEntity },
+                                        songProvider = { currentSong?.song },
                                         mediaMetadataProvider = { metadata },
                                         onDismiss = menuState::dismiss
                                     )
