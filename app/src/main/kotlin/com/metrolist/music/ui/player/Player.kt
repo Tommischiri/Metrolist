@@ -284,110 +284,18 @@ fun BottomSheetPlayer(
     val download by LocalDownloadUtil.current.getDownload(mediaMetadata?.id ?: "")
         .collectAsState(initial = null)
 
-    val sleepTimerEnabled =
-        remember(
-            playerConnection.service.sleepTimer.triggerTime,
-            playerConnection.service.sleepTimer.pauseWhenSongEnd
-        ) {
-            playerConnection.service.sleepTimer.isActive
-        }
-
-    var sleepTimerTimeLeft by remember {
-        mutableLongStateOf(0L)
-    }
-
-    LaunchedEffect(sleepTimerEnabled) {
-        if (sleepTimerEnabled) {
-            while (isActive) {
-                sleepTimerTimeLeft =
-                    if (playerConnection.service.sleepTimer.pauseWhenSongEnd) {
-                        playerConnection.player.duration - playerConnection.player.currentPosition
-                    } else {
-                        playerConnection.service.sleepTimer.triggerTime - System.currentTimeMillis()
-                    }
-                delay(1000L)
-            }
-        }
-    }
-
-    var showSleepTimerDialog by remember {
-        mutableStateOf(false)
-    }
-
-    var sleepTimerValue by remember {
-        mutableFloatStateOf(30f)
-    }
-    if (showSleepTimerDialog) {
-        AlertDialog(
-            properties = DialogProperties(usePlatformDefaultWidth = false),
-            onDismissRequest = { showSleepTimerDialog = false },
-            icon = {
-                Icon(
-                    painter = painterResource(R.drawable.bedtime),
-                    contentDescription = null
-                )
-            },
-            title = { Text(stringResource(R.string.sleep_timer)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showSleepTimerDialog = false
-                        playerConnection.service.sleepTimer.start(sleepTimerValue.roundToInt())
-                    },
-                ) {
-                    Text(stringResource(android.R.string.ok))
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showSleepTimerDialog = false },
-                ) {
-                    Text(stringResource(android.R.string.cancel))
-                }
-            },
-            text = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = pluralStringResource(
-                            R.plurals.minute,
-                            sleepTimerValue.roundToInt(),
-                            sleepTimerValue.roundToInt()
-                        ),
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-
-                    Slider(
-                        value = sleepTimerValue,
-                        onValueChange = { sleepTimerValue = it },
-                        valueRange = 5f..120f,
-                        steps = (120 - 5) / 5 - 1,
-                    )
-
-                    OutlinedIconButton(
-                        onClick = {
-                            showSleepTimerDialog = false
-                            playerConnection.service.sleepTimer.start(-1)
-                        },
-                    ) {
-                        Text(stringResource(R.string.end_of_song))
-                    }
-                }
-            },
-        )
-    }
-
     var showChoosePlaylistDialog by rememberSaveable {
         mutableStateOf(false)
     }
 
     LaunchedEffect(isPlaying, playbackState) {
         while (isActive && isPlaying && playbackState == Player.STATE_READY) {
-            position = audioPlayer.currentPosition
-            duration = audioPlayer.duration
+            position = playerConnection.player.currentPosition
+            duration = playerConnection.player.duration
             delay(200)
         }
-        position = audioPlayer.currentPosition
-        duration = audioPlayer.duration
+        position = playerConnection.player.currentPosition
+        duration = playerConnection.player.duration
     }
 
     val dismissedBound = QueuePeekHeight + WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
