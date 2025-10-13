@@ -1259,7 +1259,6 @@ fun Lyrics(
                 }
             }
         }
-        } // إغلاق else block
     }
 }
 
