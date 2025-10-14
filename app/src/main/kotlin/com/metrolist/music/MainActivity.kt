@@ -387,32 +387,34 @@ class MainActivity : ComponentActivity() {
                     return@LaunchedEffect
                 }
 
-                playerConnection.service.currentMediaMetadata.collectLatest { song ->
-                    if (song?.thumbnailUrl != null) {
-                        withContext(Dispatchers.IO) {
-                            try {
-                                val result = imageLoader.execute(
-                                    ImageRequest.Builder(this@MainActivity)
-                                        .data(song.thumbnailUrl)
-                                        .size(100, 100)
-                                        .allowHardware(true)
-                                        .memoryCachePolicy(CachePolicy.ENABLED)
-                                        .diskCachePolicy(CachePolicy.ENABLED)
-                                        .networkCachePolicy(CachePolicy.ENABLED)
-                                        .crossfade(false)
-                                        .build()
-                                )
-                                themeColor = result.image?.toBitmap()?.extractThemeColor()
-                                    ?: DefaultThemeColor
-                            } catch (e: Exception) {
-                                // Fallback to default on error
-                                themeColor = DefaultThemeColor
+                playerConnection.service.currentMediaMetadata
+                    .debounce(500) // Debounce to reduce rapid changes
+                    .collectLatest { song ->
+                        if (song?.thumbnailUrl != null) {
+                            withContext(Dispatchers.IO) {
+                                try {
+                                    val result = imageLoader.execute(
+                                        ImageRequest.Builder(this@MainActivity)
+                                            .data(song.thumbnailUrl)
+                                            .size(100, 100)
+                                            .allowHardware(true)
+                                            .memoryCachePolicy(CachePolicy.ENABLED)
+                                            .diskCachePolicy(CachePolicy.ENABLED)
+                                            .networkCachePolicy(CachePolicy.ENABLED)
+                                            .crossfade(false)
+                                            .build()
+                                    )
+                                    themeColor = result.image?.toBitmap()?.extractThemeColor()
+                                        ?: DefaultThemeColor
+                                } catch (e: Exception) {
+                                    // Fallback to default on error
+                                    themeColor = DefaultThemeColor
+                                }
                             }
+                        } else {
+                            themeColor = DefaultThemeColor
                         }
-                    } else {
-                        themeColor = DefaultThemeColor
                     }
-                }
             }
 
             MetrolistTheme(
