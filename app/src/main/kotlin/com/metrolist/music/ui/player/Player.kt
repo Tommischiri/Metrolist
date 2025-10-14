@@ -240,7 +240,7 @@ fun BottomSheetPlayer(
                         if (bitmap != null) {
                             val palette = withContext(Dispatchers.Default) {
                                 Palette.from(bitmap)
-                                    .maximumColorCount(8)
+                                    .maximumColorCount(4)
                                     .resizeBitmapArea(100 * 100)
                                     .generate()
                             }
