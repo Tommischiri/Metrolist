@@ -447,7 +447,7 @@ fun BottomSheetPlayer(
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier
                                             .fillMaxSize()
-                                            .blur(if (useDarkTheme) 150.dp else 100.dp)
+                                            .blur(50.dp)
                                     )
                                     Box(
                                         modifier = Modifier
