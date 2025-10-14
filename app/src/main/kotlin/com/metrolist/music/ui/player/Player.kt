@@ -196,14 +196,11 @@ fun BottomSheetPlayer(
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
     val sliderStyle by rememberEnumPreference(SliderStyleKey, SliderStyle.DEFAULT)
 
-    // Use derivedStateOf to read position only when needed (no continuous updates)
-    val position by remember {
-        derivedStateOf { 
-            if (isPlaying) playerConnection.player.currentPosition else playerConnection.player.currentPosition
-        }
+    var position by rememberSaveable(playbackState) {
+        mutableLongStateOf(playerConnection.player.currentPosition)
     }
-    val duration by remember {
-        derivedStateOf { playerConnection.player.duration }
+    var duration by rememberSaveable(playbackState) {
+        mutableLongStateOf(playerConnection.player.duration)
     }
     var sliderPosition by remember {
         mutableStateOf<Long?>(null)
