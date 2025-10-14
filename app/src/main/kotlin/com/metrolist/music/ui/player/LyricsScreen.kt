@@ -181,7 +181,7 @@ fun LyricsScreen(
                 val request = ImageRequest.Builder(context)
                     .data(mediaMetadata.thumbnailUrl)
                     .size(100, 100)
-                    .allowHardware(false)
+                    .allowHardware(true)
                     .memoryCacheKey("gradient_${mediaMetadata.id}")
                     .build()
                 val result = runCatching { context.imageLoader.execute(request).image }.getOrNull()
@@ -189,7 +189,7 @@ fun LyricsScreen(
                     val bitmap = result.toBitmap()
                     val palette = withContext(Dispatchers.Default) {
                         Palette.from(bitmap)
-                            .maximumColorCount(8)
+                            .maximumColorCount(4)
                             .resizeBitmapArea(100 * 100)
                             .generate()
                     }
@@ -250,7 +250,7 @@ fun LyricsScreen(
                                 contentScale = ContentScale.FillBounds,
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .blur(if (useDarkTheme) 150.dp else 100.dp)
+                                    .blur(50.dp)
                             )
                             Box(
                                 modifier = Modifier
