@@ -875,10 +875,12 @@ fun BottomSheetPlayer(
             Spacer(Modifier.height(12.dp))
 
             if (useNewPlayerDesign) {
-                BoxWithConstraints(
-                    modifier = Modifier.fillMaxWidth()
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    val maxW = maxWidth
+                    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+                    val maxW = screenWidth
                     val playButtonHeight = maxW / 6f
                     val playButtonWidth = playButtonHeight * 1.6f
                     val sideButtonHeight = playButtonHeight * 0.8f
