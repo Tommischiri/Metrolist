@@ -1443,7 +1443,7 @@ class MusicService :
 
     private fun saveQueueToDiskDebounced() {
         saveQueueJob?.cancel()
-        saveQueueJob = scope.launch(Dispatchers.IO) { // Use IO dispatcher to prevent blocking main thread
+        saveQueueJob = scope.launch {
             delay(5000) // 5 seconds debounce for heavy Java serialization
             saveQueueToDisk()
         }
@@ -1453,68 +1453,73 @@ class MusicService :
         if (player.mediaItemCount == 0) {
             return
         }
-        
-        // Ensure we're on IO thread for heavy serialization
-        if (Thread.currentThread().name.contains("main", ignoreCase = true)) {
-            scope.launch(Dispatchers.IO) {
-                saveQueueToDisk()
-            }
-            return
-        }
 
-        // Save current queue with proper type information
-        val persistQueue = currentQueue.toPersistQueue(
-            title = queueTitle,
-            items = player.mediaItems.mapNotNull { it.metadata },
-            mediaItemIndex = player.currentMediaItemIndex,
-            position = player.currentPosition
-        )
+        // Read player data on main thread (ExoPlayer requirement)
+        val queueItems = player.mediaItems.mapNotNull { it.metadata }
+        val mediaItemIndex = player.currentMediaItemIndex
+        val currentPos = player.currentPosition
+        val playWhenReady = player.playWhenReady
+        val repeatMode = player.repeatMode
+        val shuffleEnabled = player.shuffleModeEnabled
+        val volume = player.volume
+        val playbackState = player.playbackState
+        val automixItemsList = automixItems.value.mapNotNull { it.metadata }
 
-        val persistAutomix =
-            PersistQueue(
+        // Move heavy serialization to IO thread
+        scope.launch(Dispatchers.IO) {
+            // Save current queue with proper type information
+            val persistQueue = currentQueue.toPersistQueue(
+                title = queueTitle,
+                items = queueItems,
+                mediaItemIndex = mediaItemIndex,
+                position = currentPos
+            )
+
+            val persistAutomix = PersistQueue(
                 title = "automix",
-                items = automixItems.value.mapNotNull { it.metadata },
+                items = automixItemsList,
                 mediaItemIndex = 0,
                 position = 0,
             )
 
-        // Save player state
-        val persistPlayerState = PersistPlayerState(
-            playWhenReady = player.playWhenReady,
-            repeatMode = player.repeatMode,
-            shuffleModeEnabled = player.shuffleModeEnabled,
-            volume = player.volume,
-            currentPosition = player.currentPosition,
-            currentMediaItemIndex = player.currentMediaItemIndex,
-            playbackState = player.playbackState
-        )
+            // Save player state
+            val persistPlayerState = PersistPlayerState(
+                playWhenReady = playWhenReady,
+                repeatMode = repeatMode,
+                shuffleModeEnabled = shuffleEnabled,
+                volume = volume,
+                currentPosition = currentPos,
+                currentMediaItemIndex = mediaItemIndex,
+                playbackState = playbackState
+            )
 
-        runCatching {
-            filesDir.resolve(PERSISTENT_QUEUE_FILE).outputStream().use { fos ->
-                ObjectOutputStream(fos).use { oos ->
-                    oos.writeObject(persistQueue)
+            runCatching {
+                filesDir.resolve(PERSISTENT_QUEUE_FILE).outputStream().use { fos ->
+                    ObjectOutputStream(fos).use { oos ->
+                        oos.writeObject(persistQueue)
+                    }
                 }
+            }.onFailure {
+                reportException(it)
             }
-        }.onFailure {
-            reportException(it)
-        }
-        runCatching {
-            filesDir.resolve(PERSISTENT_AUTOMIX_FILE).outputStream().use { fos ->
-                ObjectOutputStream(fos).use { oos ->
-                    oos.writeObject(persistAutomix)
+            runCatching {
+                filesDir.resolve(PERSISTENT_AUTOMIX_FILE).outputStream().use { fos ->
+                    ObjectOutputStream(fos).use { oos ->
+                        oos.writeObject(persistAutomix)
+                    }
                 }
+            }.onFailure {
+                reportException(it)
             }
-        }.onFailure {
-            reportException(it)
-        }
-        runCatching {
-            filesDir.resolve(PERSISTENT_PLAYER_STATE_FILE).outputStream().use { fos ->
-                ObjectOutputStream(fos).use { oos ->
-                    oos.writeObject(persistPlayerState)
+            runCatching {
+                filesDir.resolve(PERSISTENT_PLAYER_STATE_FILE).outputStream().use { fos ->
+                    ObjectOutputStream(fos).use { oos ->
+                        oos.writeObject(persistPlayerState)
+                    }
                 }
+            }.onFailure {
+                reportException(it)
             }
-        }.onFailure {
-            reportException(it)
         }
     }
 
