@@ -117,35 +117,47 @@ fun Thumbnail(
     // Grid state
     val thumbnailLazyGridState = rememberLazyGridState()
     
-    // Create a playlist using correct shuffle-aware logic
-    val timeline = playerConnection.player.currentTimeline
-    val currentIndex = playerConnection.player.currentMediaItemIndex
-    val shuffleModeEnabled = playerConnection.player.shuffleModeEnabled
-    val previousMediaMetadata = if (swipeThumbnail && !timeline.isEmpty) {
-        val previousIndex = timeline.getPreviousWindowIndex(
-            currentIndex,
-            Player.REPEAT_MODE_OFF,
-            shuffleModeEnabled
-        )
-        if (previousIndex != C.INDEX_UNSET) {
-            try {
-                playerConnection.player.getMediaItemAt(previousIndex)
-            } catch (e: Exception) { null }
-        } else null
-    } else null
-
-    val nextMediaMetadata = if (swipeThumbnail && !timeline.isEmpty) {
-        val nextIndex = timeline.getNextWindowIndex(
-            currentIndex,
-            Player.REPEAT_MODE_OFF,
-            shuffleModeEnabled
-        )
-        if (nextIndex != C.INDEX_UNSET) {
-            try {
-                playerConnection.player.getMediaItemAt(nextIndex)
-            } catch (e: Exception) { null }
-        } else null
-    } else null
+    // Optimized: Only calculate adjacent items when swipe is enabled
+    val adjacentItems = remember(swipeThumbnail, mediaMetadata) {
+        if (!swipeThumbnail) {
+            null to null
+        } else {
+            val timeline = playerConnection.player.currentTimeline
+            val currentIndex = playerConnection.player.currentMediaItemIndex
+            val shuffleModeEnabled = playerConnection.player.shuffleModeEnabled
+            
+            val previous = if (!timeline.isEmpty) {
+                val previousIndex = timeline.getPreviousWindowIndex(
+                    currentIndex,
+                    Player.REPEAT_MODE_OFF,
+                    shuffleModeEnabled
+                )
+                if (previousIndex != C.INDEX_UNSET) {
+                    try {
+                        playerConnection.player.getMediaItemAt(previousIndex)
+                    } catch (e: Exception) { null }
+                } else null
+            } else null
+            
+            val next = if (!timeline.isEmpty) {
+                val nextIndex = timeline.getNextWindowIndex(
+                    currentIndex,
+                    Player.REPEAT_MODE_OFF,
+                    shuffleModeEnabled
+                )
+                if (nextIndex != C.INDEX_UNSET) {
+                    try {
+                        playerConnection.player.getMediaItemAt(nextIndex)
+                    } catch (e: Exception) { null }
+                } else null
+            } else null
+            
+            previous to next
+        }
+    }
+    
+    val previousMediaMetadata = adjacentItems.first
+    val nextMediaMetadata = adjacentItems.second
 
     val currentMediaItem = try {
         playerConnection.player.currentMediaItem
@@ -154,16 +166,25 @@ fun Thumbnail(
     val mediaItems = listOfNotNull(previousMediaMetadata, currentMediaItem, nextMediaMetadata)
     val currentMediaIndex = mediaItems.indexOf(currentMediaItem)
 
-    // OuterTune Snap behavior
+    // Optimized snap behavior with stable factor
     val horizontalLazyGridItemWidthFactor = 1f
-    val thumbnailSnapLayoutInfoProvider = remember(thumbnailLazyGridState) {
-        SnapLayoutInfoProvider(
-            lazyGridState = thumbnailLazyGridState,
-            positionInLayout = { layoutSize, itemSize ->
-                (layoutSize * horizontalLazyGridItemWidthFactor / 2f - itemSize / 2f)
-            },
-            velocityThreshold = 500f
-        )
+    val thumbnailSnapLayoutInfoProvider = remember(thumbnailLazyGridState, swipeThumbnail) {
+        if (swipeThumbnail) {
+            SnapLayoutInfoProvider(
+                lazyGridState = thumbnailLazyGridState,
+                positionInLayout = { layoutSize, itemSize ->
+                    (layoutSize * horizontalLazyGridItemWidthFactor / 2f - itemSize / 2f)
+                },
+                velocityThreshold = 500f
+            )
+        } else {
+            // Return a no-op provider when swipe is disabled
+            SnapLayoutInfoProvider(
+                lazyGridState = thumbnailLazyGridState,
+                positionInLayout = { _, _ -> 0f },
+                velocityThreshold = Float.MAX_VALUE
+            )
+        }
     }
 
     // Current item tracking
