@@ -187,13 +187,23 @@ fun Thumbnail(
         }
     }
 
-    // Current item tracking
-    val currentItem by remember { derivedStateOf { thumbnailLazyGridState.firstVisibleItemIndex } }
-    val itemScrollOffset by remember { derivedStateOf { thumbnailLazyGridState.firstVisibleItemScrollOffset } }
+    // Optimized current item tracking (only when swipe enabled)
+    val currentItem by remember { 
+        derivedStateOf { 
+            if (swipeThumbnail) thumbnailLazyGridState.firstVisibleItemIndex else 0
+        } 
+    }
+    val itemScrollOffset by remember { 
+        derivedStateOf { 
+            if (swipeThumbnail) thumbnailLazyGridState.firstVisibleItemScrollOffset else 0
+        }
+    }
 
-    // Handle swipe to change song
-    LaunchedEffect(itemScrollOffset) {
-        if (!thumbnailLazyGridState.isScrollInProgress || !swipeThumbnail || itemScrollOffset != 0 || currentMediaIndex < 0) return@LaunchedEffect
+    // Handle swipe to change song (only when enabled)
+    LaunchedEffect(itemScrollOffset, swipeThumbnail) {
+        if (!swipeThumbnail || !thumbnailLazyGridState.isScrollInProgress || itemScrollOffset != 0 || currentMediaIndex < 0) {
+            return@LaunchedEffect
+        }
 
         if (currentItem > currentMediaIndex && canSkipNext) {
             playerConnection.player.seekToNext()
