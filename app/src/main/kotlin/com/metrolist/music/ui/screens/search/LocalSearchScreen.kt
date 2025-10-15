@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -15,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -75,20 +73,10 @@ fun LocalSearchScreen(
         viewModel.query.value = query
     }
 
-    val configuration = LocalConfiguration.current
-    val isLandscape = configuration.screenWidthDp > configuration.screenHeightDp
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(if (pureBlack) Color.Black else MaterialTheme.colorScheme.background)
-            .let { base ->
-                if (isLandscape) {
-                    base.windowInsetsPadding(
-                        WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)
-                    )
-                } else base
-            }
     ) {
         ChipsRow(
             chips = listOf(
@@ -105,9 +93,6 @@ fun LocalSearchScreen(
         LazyColumn(
             state = lazyListState,
             modifier = Modifier.weight(1f),
-            contentPadding = WindowInsets.systemBars
-                .only(WindowInsetsSides.Bottom)
-                .asPaddingValues(),
         ) {
             result.map.forEach { (filter, items) ->
                 if (result.filter == LocalFilter.ALL) {
