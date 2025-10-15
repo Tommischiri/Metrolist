@@ -63,8 +63,7 @@ fun <E> ChipsRow(
         modifier =
         modifier
             .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)),
+            .horizontalScroll(rememberScrollState()),
     ) {
         Spacer(Modifier.width(12.dp))
 
@@ -108,8 +107,7 @@ fun <Int> ChoiceChipsRow(
         modifier =
         modifier
             .fillMaxWidth()
-            .padding(start = 12.dp)
-            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)),
+            .padding(start = 12.dp),
     ) {
         var expanded by remember { mutableStateOf(false) }
 
@@ -181,8 +179,7 @@ fun <Int> ChoiceChipsRow(
                 modifier =
                 Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)),
+                    .horizontalScroll(rememberScrollState()),
             ) {
                 chips.forEach { (value, label) ->
                     Spacer(Modifier.width(8.dp))
