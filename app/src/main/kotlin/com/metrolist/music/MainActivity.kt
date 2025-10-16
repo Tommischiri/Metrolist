@@ -91,6 +91,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -527,7 +528,7 @@ class MainActivity : ComponentActivity() {
 
                     val showRail by remember {
                         derivedStateOf {
-                            configuration.screenWidthDp > configuration.screenHeightDp && !inSearchScreen
+                            context.landscapeMode() && !inSearchScreen
                         }
                     }
 

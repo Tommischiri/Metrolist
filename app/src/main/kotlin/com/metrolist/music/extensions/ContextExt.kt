@@ -1,9 +1,11 @@
 package com.metrolist.music.extensions
 
 import android.content.Context
+import android.content.res.Configuration
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import com.metrolist.music.constants.InnerTubeCookieKey
+import com.metrolist.music.constants.TabletUiKey
 import com.metrolist.music.constants.YtmSyncKey
 import com.metrolist.music.utils.dataStore
 import com.metrolist.music.utils.get
