@@ -5,7 +5,7 @@ import android.content.res.Configuration
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import com.metrolist.music.constants.InnerTubeCookieKey
-import com.metrolist.music.constants.TabletUiKey
+import com.metrolist.music.constants.LandscapeModeKey
 import com.metrolist.music.constants.YtmSyncKey
 import com.metrolist.music.utils.dataStore
 import com.metrolist.music.utils.get
@@ -33,10 +33,10 @@ fun Context.isInternetConnected(): Boolean {
 
 fun Context.landscapeMode(): Boolean {
     val config = resources.configuration
-    val isTablet = config.smallestScreenWidthDp >= 600
+    val isLargeScreen = config.smallestScreenWidthDp >= 600
     val isLandscape = config.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val forceTabMode = runBlocking {
-        dataStore.get(TabletUiKey, isTablet)
+    val forceLandscapeMode = runBlocking {
+        dataStore.get(LandscapeModeKey, isLargeScreen)
     }
-    return (isTablet || forceTabMode) && isLandscape
+    return (isLargeScreen || forceLandscapeMode) && isLandscape
 }
