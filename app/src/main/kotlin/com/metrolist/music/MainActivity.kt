@@ -68,7 +68,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -91,7 +90,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -124,7 +123,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.window.core.layout.WindowWidthSizeClass
 import coil3.compose.AsyncImage
 import coil3.imageLoader
 import coil3.request.CachePolicy
@@ -158,6 +156,7 @@ import com.metrolist.music.constants.SlimNavBarKey
 import com.metrolist.music.constants.StopMusicOnTaskClearKey
 import com.metrolist.music.db.MusicDatabase
 import com.metrolist.music.db.entities.SearchHistory
+import com.metrolist.music.extensions.landscapeMode
 import com.metrolist.music.extensions.toEnum
 import com.metrolist.music.models.toMediaMetadata
 import com.metrolist.music.playback.DownloadUtil
@@ -430,16 +429,16 @@ class MainActivity : ComponentActivity() {
                             if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface
                         )
                 ) {
-                    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-                    val useRail by remember {
-                        derivedStateOf {
-                            windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.EXPANDED
-                        }
-                    }
-
+                    val context = LocalContext.current
                     val focusManager = LocalFocusManager.current
                     val density = LocalDensity.current
-                    val configuration = LocalConfiguration.current
+                    
+                    val useRail by remember {
+                        derivedStateOf {
+                            context.landscapeMode()
+                        }
+                    }
+                    
                     val cutoutInsets = WindowInsets.displayCutout
                     val windowsInsets = WindowInsets.systemBars
                     val bottomInset = with(density) { windowsInsets.getBottom(density).toDp() }
