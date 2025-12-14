@@ -621,7 +621,7 @@
     <string name="ai_deepl_formality_default">Default</string>
     <string name="ai_deepl_formality_more">More Formal</string>
     <string name="ai_deepl_formality_less">Less Formal</string>
-    
+
     <!-- Crash Handler -->
     <string name="crash_title">App Crashed</string>
     <string name="crash_description">An unexpected error occurred. Please share the crash report to help us fix the issue.</string>
