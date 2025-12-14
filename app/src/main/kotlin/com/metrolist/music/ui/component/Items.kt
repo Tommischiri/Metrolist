@@ -1,7 +1,7 @@
 /**
  * Metrolist Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
- * 
+ *
  * Optimized for minimal recomposition during navigation
  */
 
@@ -105,6 +105,9 @@ import com.metrolist.music.R
 import com.metrolist.music.constants.CropAlbumArtKey
 import com.metrolist.music.constants.GridItemSize
 import com.metrolist.music.constants.GridItemsSizeKey
+import com.metrolist.music.constants.BetterSwipeToSongKey
+import com.metrolist.music.constants.HideExplicitKey
+import com.metrolist.music.constants.ListItemHeight
 import com.metrolist.music.constants.GridThumbnailHeight
 import com.metrolist.music.constants.ListItemHeight
 import com.metrolist.music.constants.ListThumbnailSize
@@ -1462,7 +1465,7 @@ fun ItemThumbnail(
     thumbnailRatio: Float = 1f
 ) {
     val cropAlbumArt by rememberPreference(CropAlbumArtKey, false)
-    
+
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
@@ -1544,7 +1547,7 @@ fun LocalThumbnail(
     thumbnailRatio: Float = 1f
 ) {
     val cropAlbumArt by rememberPreference(CropAlbumArtKey, false)
-    
+
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
@@ -1650,7 +1653,7 @@ fun PlaylistThumbnail(
     cacheKey: String? = null
 ) {
     val cropAlbumArt by rememberPreference(CropAlbumArtKey, false)
-    
+
     when (thumbnails.size) {
         0 -> Box(
             contentAlignment = Alignment.Center,
@@ -1812,6 +1815,8 @@ fun SwipeToSongBox(
     val offset = remember { mutableFloatStateOf(0f) }
     val threshold = 300f
 
+    val betterSwipeEnabled by rememberPreference(BetterSwipeToSongKey, defaultValue = false)
+
     val dragState = rememberDraggableState { delta ->
         offset.floatValue = (offset.floatValue + delta).coerceIn(-threshold, threshold)
     }
@@ -1824,13 +1829,13 @@ fun SwipeToSongBox(
                 state = dragState,
                 onDragStopped = {
                     when {
-                        offset.floatValue >= threshold -> {
+                        offset.floatValue*(if(betterSwipeEnabled) -1 else 1) >= threshold -> {
                             player?.playNext(listOf(mediaItem))
                             Toast.makeText(ctx, R.string.play_next, Toast.LENGTH_SHORT).show()
                             reset(offset, scope)
                         }
 
-                        offset.floatValue <= -threshold -> {
+                        offset.floatValue*(if(betterSwipeEnabled) -1 else 1) <= -threshold -> {
                             player?.addToQueue(listOf(mediaItem))
                             Toast.makeText(ctx, R.string.add_to_queue, Toast.LENGTH_SHORT).show()
                             reset(offset, scope)
@@ -1842,18 +1847,18 @@ fun SwipeToSongBox(
             )
     ) {
         if (offset.floatValue != 0f) {
-            val (iconRes, bg, tint, align) = if (offset.floatValue > 0)
+            val (iconRes, bg, tint, align) = if (offset.floatValue * (if(betterSwipeEnabled) -1 else 1) > 0)
                 Quadruple(
                     R.drawable.playlist_play,
                     MaterialTheme.colorScheme.secondary,
                     MaterialTheme.colorScheme.onSecondary,
-                    Alignment.CenterStart
+                    (if(betterSwipeEnabled) Alignment.CenterEnd else Alignment.CenterStart)
                 ) else
                 Quadruple(
                     R.drawable.queue_music,
                     MaterialTheme.colorScheme.primary,
                     MaterialTheme.colorScheme.onPrimary,
-                    Alignment.CenterEnd
+                    (if(betterSwipeEnabled) Alignment.CenterStart else Alignment.CenterEnd)
                 )
 
             Box(
