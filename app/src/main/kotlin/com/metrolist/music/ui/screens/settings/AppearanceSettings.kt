@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.metrolist.music.LocalPlayerAwareWindowInsets
 import com.metrolist.music.R
+import com.metrolist.music.constants.BetterSwipeToSongKey
 import com.metrolist.music.constants.ChipSortTypeKey
 import com.metrolist.music.constants.CropAlbumArtKey
 import com.metrolist.music.constants.DefaultOpenTabKey
@@ -237,6 +238,11 @@ fun AppearanceSettings(
         defaultValue = false
     )
 
+    val (betterSwipeToSong, onBetterSwipeToSongChange) = rememberPreference(
+        BetterSwipeToSongKey,
+        defaultValue = false
+    )
+
     val (swipeToRemoveSong, onSwipeToRemoveSongChange) = rememberPreference(
         SwipeToRemoveSongKey,
         defaultValue = false
@@ -349,35 +355,35 @@ fun AppearanceSettings(
 
     if (showLyricsTextSizeDialog) {
         var tempTextSize by remember { mutableFloatStateOf(lyricsTextSize) }
-        
+
         DefaultDialog(
-            onDismiss = { 
+            onDismiss = {
                 tempTextSize = lyricsTextSize
-                showLyricsTextSizeDialog = false 
+                showLyricsTextSizeDialog = false
             },
             buttons = {
                 TextButton(
-                    onClick = { 
+                    onClick = {
                         tempTextSize = 24f
                     }
                 ) {
                     Text(stringResource(R.string.reset))
                 }
-                
+
                 Spacer(modifier = Modifier.weight(1f))
-                
+
                 TextButton(
-                    onClick = { 
+                    onClick = {
                         tempTextSize = lyricsTextSize
-                        showLyricsTextSizeDialog = false 
+                        showLyricsTextSizeDialog = false
                     }
                 ) {
                     Text(stringResource(android.R.string.cancel))
                 }
                 TextButton(
-                    onClick = { 
+                    onClick = {
                         onLyricsTextSizeChange(tempTextSize)
-                        showLyricsTextSizeDialog = false 
+                        showLyricsTextSizeDialog = false
                     }
                 ) {
                     Text(stringResource(android.R.string.ok))
@@ -413,35 +419,35 @@ fun AppearanceSettings(
 
     if (showLyricsLineSpacingDialog) {
         var tempLineSpacing by remember { mutableFloatStateOf(lyricsLineSpacing) }
-        
+
         DefaultDialog(
-            onDismiss = { 
+            onDismiss = {
                 tempLineSpacing = lyricsLineSpacing
-                showLyricsLineSpacingDialog = false 
+                showLyricsLineSpacingDialog = false
             },
             buttons = {
                 TextButton(
-                    onClick = { 
+                    onClick = {
                         tempLineSpacing = 1.3f
                     }
                 ) {
                     Text(stringResource(R.string.reset))
                 }
-                
+
                 Spacer(modifier = Modifier.weight(1f))
-                
+
                 TextButton(
-                    onClick = { 
+                    onClick = {
                         tempLineSpacing = lyricsLineSpacing
-                        showLyricsLineSpacingDialog = false 
+                        showLyricsLineSpacingDialog = false
                     }
                 ) {
                     Text(stringResource(android.R.string.cancel))
                 }
                 TextButton(
-                    onClick = { 
+                    onClick = {
                         onLyricsLineSpacingChange(tempLineSpacing)
-                        showLyricsLineSpacingDialog = false 
+                        showLyricsLineSpacingDialog = false
                     }
                 ) {
                     Text(stringResource(android.R.string.ok))
@@ -1301,6 +1307,26 @@ fun AppearanceSettings(
                         )
                     },
                     onClick = { onSwipeToSongChange(!swipeToSong) }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.swipe),
+                    title = { Text(stringResource(R.string.better_swipe_song_to_add)) },
+                    trailingContent = {
+                        Switch(
+                            checked = betterSwipeToSong,
+                            onCheckedChange = onBetterSwipeToSongChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (betterSwipeToSong) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onBetterSwipeToSongChange(!betterSwipeToSong) }
                 ),
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.swipe),
