@@ -156,6 +156,10 @@ android {
                 debugSymbolLevel = "FULL"
             }
         }
+        create("staging") {
+            initWith(getByName("release"))
+            signingConfig = signingConfigs.getByName("persistentDebug")
+        }
     }
 
     compileOptions {
