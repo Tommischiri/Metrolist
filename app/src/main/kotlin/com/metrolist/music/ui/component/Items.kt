@@ -94,6 +94,7 @@ import com.metrolist.music.LocalDatabase
 import com.metrolist.music.LocalDownloadUtil
 import com.metrolist.music.LocalPlayerConnection
 import com.metrolist.music.R
+import com.metrolist.music.constants.BetterSwipeToSongKey
 import com.metrolist.music.constants.HideExplicitKey
 import com.metrolist.music.constants.ListItemHeight
 import com.metrolist.music.constants.GridThumbnailHeight
@@ -1402,6 +1403,8 @@ fun SwipeToSongBox(
     val offset = remember { mutableFloatStateOf(0f) }
     val threshold = 300f
 
+    val betterSwipeEnabled by rememberPreference(BetterSwipeToSongKey, defaultValue = false)
+
     val dragState = rememberDraggableState { delta ->
         offset.value = (offset.value + delta).coerceIn(-threshold, threshold)
     }
@@ -1414,13 +1417,13 @@ fun SwipeToSongBox(
                 state = dragState,
                 onDragStopped = {
                     when {
-                        offset.value >= threshold -> {
+                        offset.value*(if(betterSwipeEnabled) -1 else 1) >= threshold -> {
                             player?.playNext(listOf(mediaItem))
                             Toast.makeText(ctx, R.string.play_next, Toast.LENGTH_SHORT).show()
                             reset(offset, scope)
                         }
 
-                        offset.value <= -threshold -> {
+                        offset.value*(if(betterSwipeEnabled) -1 else 1) <= -threshold -> {
                             player?.addToQueue(listOf(mediaItem))
                             Toast.makeText(ctx, R.string.add_to_queue, Toast.LENGTH_SHORT).show()
                             reset(offset, scope)
@@ -1432,18 +1435,18 @@ fun SwipeToSongBox(
             )
     ) {
         if (offset.value != 0f) {
-            val (iconRes, bg, tint, align) = if (offset.value > 0)
+            val (iconRes, bg, tint, align) = if (offset.value * (if(betterSwipeEnabled) -1 else 1) > 0)
                 Quadruple(
                     R.drawable.playlist_play,
                     MaterialTheme.colorScheme.secondary,
                     MaterialTheme.colorScheme.onSecondary,
-                    Alignment.CenterStart
+                    (if(betterSwipeEnabled) Alignment.CenterEnd else Alignment.CenterStart)
                 ) else
                 Quadruple(
                     R.drawable.queue_music,
                     MaterialTheme.colorScheme.primary,
                     MaterialTheme.colorScheme.onPrimary,
-                    Alignment.CenterEnd
+                    (if(betterSwipeEnabled) Alignment.CenterStart else Alignment.CenterEnd)
                 )
 
             Box(

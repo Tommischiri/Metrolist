@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.metrolist.music.LocalPlayerAwareWindowInsets
 import com.metrolist.music.R
+import com.metrolist.music.constants.BetterSwipeToSongKey
 import com.metrolist.music.constants.ChipSortTypeKey
 import com.metrolist.music.constants.DarkModeKey
 import com.metrolist.music.constants.DefaultOpenTabKey
@@ -159,6 +160,11 @@ fun AppearanceSettings(
 
     val (swipeToSong, onSwipeToSongChange) = rememberPreference(
         SwipeToSongKey,
+        defaultValue = false
+    )
+
+    val (betterSwipeToSong, onBetterSwipeToSongChange) = rememberPreference(
+        BetterSwipeToSongKey,
         defaultValue = false
     )
 
@@ -601,6 +607,13 @@ fun AppearanceSettings(
             icon = { Icon(painterResource(R.drawable.swipe), null) },
             checked = swipeToSong,
             onCheckedChange = onSwipeToSongChange
+        )
+
+        SwitchPreference(
+            title = { Text(stringResource(R.string.better_swipe_song_to_add)) },
+            icon = { Icon(painterResource(R.drawable.swipe), null) },
+            checked = betterSwipeToSong,
+            onCheckedChange = onBetterSwipeToSongChange
         )
 
         SwitchPreference(
