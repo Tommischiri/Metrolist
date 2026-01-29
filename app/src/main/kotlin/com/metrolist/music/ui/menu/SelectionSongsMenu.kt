@@ -779,32 +779,34 @@ fun SelectionMediaMetadataMenu(
     ) {
         item {
             Material3MenuGroup(
-                items =
-                    buildList {
-                        if (currentItems.isNotEmpty() && !isGuest) {
-                            add(
-                                Material3MenuItemData(
-                                    title = { Text(text = stringResource(R.string.delete)) },
-                                    icon = {
-                                        Icon(
-                                            painter = painterResource(R.drawable.delete),
-                                            contentDescription = null,
-                                        )
-                                    },
-                                    onClick = {
-                                        onDismiss()
-                                        var i = 0
-                                        currentItems.forEach { cur ->
-                                            if (playerConnection.player.availableCommands.contains(
-                                                    Player.COMMAND_CHANGE_MEDIA_ITEMS,
-                                                )
-                                            ) {
-                                                playerConnection.player.removeMediaItem(cur.firstPeriodIndex - i++)
+                items = buildList {
+                    if (currentItems.isNotEmpty() && !isGuest) {
+                        add(
+                            Material3MenuItemData(
+                                title = { Text(text = stringResource(R.string.delete)) },
+                                icon = {
+                                    Icon(
+                                        painter = painterResource(R.drawable.delete),
+                                        contentDescription = null,
+                                    )
+                                },
+                                onClick = {
+                                    onDismiss()
+                                    var i = 0
+                                    currentItems.forEach { cur ->
+                                        if (playerConnection.player.availableCommands.contains(
+                                                Player.COMMAND_CHANGE_MEDIA_ITEMS
+                                            )
+                                        ) {
+                                            var l = cur.firstPeriodIndex - i++
+                                            if (l < playerConnection.service.nextQueueIndex) {
+                                                playerConnection.service.nextQueueIndex--
                                             }
+                                            playerConnection.player.removeMediaItem(l)
                                         }
-                                        clearAction()
-                                    },
-                                ),
+                                    }
+                                    clearAction()
+                                }
                             )
                         }
                         if (!isGuest) {
