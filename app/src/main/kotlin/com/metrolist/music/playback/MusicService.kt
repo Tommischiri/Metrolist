@@ -161,6 +161,7 @@ import com.metrolist.music.constants.SimilarContent
 import com.metrolist.music.constants.SkipSilenceInstantKey
 import com.metrolist.music.constants.SkipSilenceKey
 import com.metrolist.music.constants.StopMusicOnTaskClearKey
+import com.metrolist.music.constants.SpotifyLikeQueueKey
 import com.metrolist.music.db.MusicDatabase
 import com.metrolist.music.db.entities.Event
 import com.metrolist.music.db.entities.FormatEntity
@@ -393,6 +394,8 @@ class MusicService :
     private var mediaSession: MediaLibrarySession? = null
     private var controllerFuture: com.google.common.util.concurrent.ListenableFuture<MediaController>? = null
 
+    var nextQueueIndex: Int = 0
+
     private val playerInitialized = MutableStateFlow(false)
     val isPlayerReady: kotlinx.coroutines.flow.StateFlow<Boolean> = playerInitialized.asStateFlow()
 
@@ -589,8 +592,11 @@ class MusicService :
             }
         }
 
+    private var spotifyLikeQueue: Boolean = true
+
     override fun onCreate() {
         super.onCreate()
+        spotifyLikeQueue = dataStore.get(SpotifyLikeQueueKey, true)
         isRunning = true
         shutdownDeferred = kotlinx.coroutines.CompletableDeferred<Unit>()
 
@@ -1255,6 +1261,7 @@ class MusicService :
                         // player.repeatMode = playerState.repeatMode
                         // player.shuffleModeEnabled = playerState.shuffleModeEnabled
                         playerVolume.value = playerState.volume
+                        nextQueueIndex = playerState.nextQueueIndex
 
                         if (playerState.currentMediaItemIndex < player.mediaItemCount) {
                             player.seekTo(playerState.currentMediaItemIndex, playerState.currentPosition)
@@ -1762,6 +1769,7 @@ class MusicService :
         queue: Queue,
         playWhenReady: Boolean = true,
     ) {
+        nextQueueIndex = 1
         if (!playerInitialized.value) {
             Timber.tag(TAG).w("playQueue called before player initialization, queuing request")
             scope.launch {
@@ -2033,6 +2041,7 @@ class MusicService :
     fun playNext(items: List<MediaItem>) {
         // If queue is empty or player is idle, play immediately instead
         if (player.mediaItemCount == 0 || player.playbackState == STATE_IDLE) {
+            nextQueueIndex = 1
             player.setMediaItems(items)
             player.prepare()
             if (castConnectionHandler?.isCasting?.value != true) {
@@ -2040,6 +2049,7 @@ class MusicService :
             }
             return
         }
+        nextQueueIndex++
 
         if (dataStore.get(PreventDuplicateTracksInQueueKey, false)) {
             val itemIds = items.map { it.mediaId }.toSet()
@@ -2146,7 +2156,16 @@ class MusicService :
             val shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false)
             applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
         }
+        if(spotifyLikeQueue) {
+            if(nextQueueIndex <= player.currentMediaItemIndex) {
+                nextQueueIndex = player.currentMediaItemIndex+1
+            }
+            player.addMediaItems(nextQueueIndex,items)
+        } else {
+            player.addMediaItems(items)
+        }
         player.prepare()
+        nextQueueIndex++
     }
 
     fun toggleLibrary() {
@@ -2309,7 +2328,7 @@ class MusicService :
                     val targetLufs = loudnessLevelCached.targetLufs
 
                     Timber.tag(TAG).d("Audio normalization enabled: $normalizeAudio")
-                    
+
                     val measuredLufs: Double? = format?.perceptualLoudnessDb
                         ?: format?.loudnessDb?.let { it + LoudnessLevel.AGGRESSIVE.targetLufs }
 
@@ -2508,6 +2527,11 @@ class MusicService :
             }
         }
         previousMediaItemIndex = player.currentMediaItemIndex
+
+
+        if(nextQueueIndex <= player.currentMediaItemIndex) {
+            nextQueueIndex = player.currentMediaItemIndex+1
+        }
 
         lastPlaybackSpeed = -1.0f // force update song
 
@@ -3886,6 +3910,7 @@ class MusicService :
                     currentPosition = player.currentPosition,
                     currentMediaItemIndex = player.currentMediaItemIndex,
                     playbackState = player.playbackState,
+                    nextQueueIndex = nextQueueIndex,
                 )
 
             runCatching {
@@ -4763,7 +4788,7 @@ class MusicService :
         @Volatile
         var isRunning = false
             private set
-            
+
         @Volatile
         var shutdownDeferred = kotlinx.coroutines.CompletableDeferred<Unit>().apply { complete(Unit) }
     }
