@@ -51,6 +51,7 @@ import com.metrolist.music.constants.SkipSilenceKey
 import com.metrolist.music.constants.StopMusicOnTaskClearKey
 import com.metrolist.music.constants.HistoryDuration
 import com.metrolist.music.constants.SeekExtraSeconds
+import com.metrolist.music.constants.SpotifyLikeQueueKey
 import com.metrolist.music.ui.component.EnumListPreference
 import com.metrolist.music.ui.component.IconButton
 import com.metrolist.music.ui.component.PreferenceGroupTitle
@@ -70,6 +71,10 @@ fun PlayerSettings(
     val (audioQuality, onAudioQualityChange) = rememberEnumPreference(
         AudioQualityKey,
         defaultValue = AudioQuality.AUTO
+    )
+    val (spotifyLikeQueue, onSpotifyLikeQueue) = rememberPreference(
+        SpotifyLikeQueueKey,
+        defaultValue = true
     )
     val (persistentQueue, onPersistentQueueChange) = rememberPreference(
         PersistentQueueKey,
@@ -193,6 +198,14 @@ fun PlayerSettings(
 
         PreferenceGroupTitle(
             title = stringResource(R.string.queue)
+        )
+
+        SwitchPreference(
+            title = { Text(stringResource(R.string.spotify_like_queue)) },
+            //description = stringResource(R.string.persistent_queue_desc),
+            icon = { Icon(painterResource(R.drawable.queue_music), null) },
+            checked = spotifyLikeQueue,
+            onCheckedChange = onSpotifyLikeQueue
         )
 
         SwitchPreference(

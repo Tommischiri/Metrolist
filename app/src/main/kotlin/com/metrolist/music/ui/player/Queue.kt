@@ -3,6 +3,7 @@ package com.metrolist.music.ui.player
 import androidx.activity.compose.BackHandler
 import android.annotation.SuppressLint
 import android.text.format.Formatter
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -703,7 +704,11 @@ fun Queue(
                                 )
                             ) {
                                 processedDismiss = true
-                                playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
+                                var l = currentItem.firstPeriodIndex
+                                if (l < playerConnection.service.nextQueueIndex) {
+                                    playerConnection.service.nextQueueIndex--
+                                }
+                                playerConnection.player.removeMediaItem(l)
                                 dismissJob?.cancel()
                                 dismissJob = coroutineScope.launch {
                                     val snackbarResult = snackbarHostState.showSnackbar(

@@ -629,7 +629,11 @@ fun SelectionMediaMetadataMenu(
                         var i = 0
                         currentItems.forEach { cur ->
                             if (playerConnection.player.availableCommands.contains(Player.COMMAND_CHANGE_MEDIA_ITEMS)) {
-                                playerConnection.player.removeMediaItem(cur.firstPeriodIndex - i++)
+                                var l = cur.firstPeriodIndex - i++
+                                if (l < playerConnection.service.nextQueueIndex) {
+                                    playerConnection.service.nextQueueIndex--
+                                }
+                                playerConnection.player.removeMediaItem(l)
                             }
                         }
                         clearAction()

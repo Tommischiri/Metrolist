@@ -55,6 +55,7 @@ enum class AudioQuality {
 }
 val AudioOffload = booleanPreferencesKey("enableOffload")
 
+val SpotifyLikeQueueKey = booleanPreferencesKey("spotifyLikeQueue")
 val PersistentQueueKey = booleanPreferencesKey("persistentQueue")
 val SkipSilenceKey = booleanPreferencesKey("skipSilence")
 val AudioNormalizationKey = booleanPreferencesKey("audioNormalization")
