@@ -1,9 +1,15 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.utils
 
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Log
 import androidx.core.graphics.createBitmap
 import androidx.media3.common.util.BitmapLoader
 import coil3.imageLoader
@@ -21,12 +27,33 @@ class CoilBitmapLoader(
     private val context: Context,
     private val scope: CoroutineScope,
 ) : BitmapLoader {
+    
     override fun supportsMimeType(mimeType: String): Boolean = mimeType.startsWith("image/")
+
+    private fun createFallbackBitmap(): Bitmap = 
+        Bitmap.createBitmap(64, 64, Bitmap.Config.ARGB_8888)
+
+    private fun Bitmap.copyIfNeeded(): Bitmap {
+        return if (isRecycled) {
+            createFallbackBitmap()
+        } else {
+            try {
+                copy(Bitmap.Config.ARGB_8888, false) ?: createFallbackBitmap()
+            } catch (e: Exception) {
+                createFallbackBitmap()
+            }
+        }
+    }
 
     override fun decodeBitmap(data: ByteArray): ListenableFuture<Bitmap> =
         scope.future(Dispatchers.IO) {
-            BitmapFactory.decodeByteArray(data, 0, data.size)
-                ?: error("Could not decode image data")
+            try {
+                val bitmap = BitmapFactory.decodeByteArray(data, 0, data.size)
+                bitmap?.copyIfNeeded() ?: createFallbackBitmap()
+            } catch (e: Exception) {
+                Log.w("CoilBitmapLoader", "Failed to decode bitmap data", e)
+                createFallbackBitmap()
+            }
         }
 
     override fun loadBitmap(uri: Uri): ListenableFuture<Bitmap> =
@@ -38,16 +65,17 @@ class CoilBitmapLoader(
 
             val result = context.imageLoader.execute(request)
 
-            // In case of error, returns an empty bitmap
             when (result) {
                 is ErrorResult -> {
-                    createBitmap(64, 64)
+                    createFallbackBitmap()
                 }
                 is SuccessResult -> {
                     try {
-                        result.image.toBitmap()
+                        val bitmap = result.image.toBitmap()
+                        bitmap.copyIfNeeded()
                     } catch (e: Exception) {
-                        createBitmap(64, 64)
+                        Log.w("CoilBitmapLoader", "Failed to convert image to bitmap", e)
+                        createFallbackBitmap()
                     }
                 }
             }

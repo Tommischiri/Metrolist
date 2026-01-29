@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.ui.screens
 
 import androidx.annotation.DrawableRes
@@ -23,7 +28,7 @@ sealed class Screens(
         titleId = R.string.search,
         iconIdInactive = R.drawable.search,
         iconIdActive = R.drawable.search,
-        route = "search"
+        route = "search_input"
     )
 
     object Library : Screens(

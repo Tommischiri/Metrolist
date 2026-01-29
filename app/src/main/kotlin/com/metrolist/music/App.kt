@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music
 
 import android.app.Application
@@ -12,6 +17,7 @@ import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import coil3.disk.DiskCache
 import coil3.disk.directory
+import coil3.memory.MemoryCache
 import coil3.request.CachePolicy
 import coil3.request.allowHardware
 import coil3.request.crossfade
@@ -34,6 +40,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import okhttp3.Credentials
 import timber.log.Timber
@@ -64,7 +71,7 @@ class App : Application(), SingletonImageLoader.Factory {
     private suspend fun initializeSettings() {
         val settings = dataStore.data.first()
         val locale = Locale.getDefault()
-        val languageTag = locale.toLanguageTag().replace("-Hant", "")
+        val languageTag = locale.language
 
         YouTube.locale = YouTubeLocale(
             gl = settings[ContentCountryKey]?.takeIf { it != SYSTEM_DEFAULT }
@@ -107,7 +114,7 @@ class App : Application(), SingletonImageLoader.Factory {
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(this@App, "Failed to parse proxy url.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@App, getString(R.string.failed_to_parse_proxy), Toast.LENGTH_SHORT).show()
                 }
                 reportException(e)
             }
@@ -185,11 +192,18 @@ class App : Application(), SingletonImageLoader.Factory {
     }
 
     override fun newImageLoader(context: PlatformContext): ImageLoader {
-        val cacheSize = dataStore.get(MaxImageCacheSizeKey, 512)
-
+        val cacheSize = runBlocking {
+            dataStore.data.map { it[MaxImageCacheSizeKey] ?: 512 }.first()
+        }
         return ImageLoader.Builder(this).apply {
-            crossfade(false)
+            crossfade(true)
             allowHardware(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+            // Memory cache for fast image loading (prevents network requests on recomposition)
+            memoryCache {
+                MemoryCache.Builder()
+                    .maxSizePercent(context, 0.25)
+                    .build()
+            }
             if (cacheSize == 0) {
                 diskCachePolicy(CachePolicy.DISABLED)
             } else {

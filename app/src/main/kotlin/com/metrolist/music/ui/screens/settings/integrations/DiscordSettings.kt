@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.ui.screens.settings.integrations
 
 import android.content.Intent
@@ -106,12 +111,19 @@ fun DiscordSettings(
     LaunchedEffect(discordToken) {
         val token = discordToken
         if (token.isEmpty()) {
+            discordUsername = ""
+            discordName = ""
             return@LaunchedEffect
         }
-        coroutineScope.launch(Dispatchers.IO) {
+        // Fetch user info when token changes
+        launch(Dispatchers.IO) {
             KizzyRPC.getUserInfo(token).onSuccess {
                 discordUsername = it.username
                 discordName = it.name
+            }.onFailure {
+                // Clear user info on failure
+                discordUsername = ""
+                discordName = ""
             }
         }
     }
@@ -318,7 +330,7 @@ fun RichPresence(song: Song?, currentPlaybackTimeMillis: Long = 0L) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = "Listening to Metrolist",
+                text = stringResource(R.string.listening_to_metrolist),
                 style = MaterialTheme.typography.labelLarge,
                 textAlign = TextAlign.Start,
                 fontWeight = FontWeight.ExtraBold,
@@ -433,7 +445,7 @@ fun RichPresence(song: Song?, currentPlaybackTimeMillis: Long = 0L) {
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Listen on YouTube Music")
+                Text(stringResource(R.string.listen_on_youtube_music))
             }
 
             OutlinedButton(
@@ -446,7 +458,7 @@ fun RichPresence(song: Song?, currentPlaybackTimeMillis: Long = 0L) {
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Visit Metrolist")
+                Text(stringResource(R.string.visit_metrolist))
             }
         }
     }

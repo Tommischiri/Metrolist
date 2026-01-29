@@ -1,11 +1,18 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
+}
 plugins {
     id("com.android.application")
     kotlin("android")
     alias(libs.plugins.hilt)
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -16,19 +23,35 @@ android {
         applicationId = "com.metrolist.music"
         minSdk = 26
         targetSdk = 36
-        versionCode = 129
-        versionName = "12.7.1"
+        versionCode = 138
+        versionName = "12.12.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
 
         // LastFM API keys from GitHub Secrets
-        buildConfigField("String", "LASTFM_API_KEY", "\"${System.getenv("LASTFM_API_KEY") ?: ""}\"")
-        buildConfigField("String", "LASTFM_SECRET", "\"${System.getenv("LASTFM_SECRET") ?: ""}\"")
+        val lastFmKey = localProperties.getProperty("LASTFM_API_KEY") ?: System.getenv("LASTFM_API_KEY") ?: ""
+        val lastFmSecret = localProperties.getProperty("LASTFM_SECRET") ?: System.getenv("LASTFM_SECRET") ?: ""
+
+        buildConfigField("String", "LASTFM_API_KEY", "\"$lastFmKey\"")
+        buildConfigField("String", "LASTFM_SECRET", "\"$lastFmSecret\"")
     }
 
-    flavorDimensions += "abi"
+    flavorDimensions += listOf("abi", "variant")
     productFlavors {
+        // FOSS variant (default) - F-Droid compatible, no Google Play Services
+        create("foss") {
+            dimension = "variant"
+            isDefault = true
+            buildConfigField("Boolean", "CAST_AVAILABLE", "false")
+        }
+        
+        // GMS variant - with Google Cast support (requires Google Play Services)
+        create("gms") {
+            dimension = "variant"
+            buildConfigField("Boolean", "CAST_AVAILABLE", "true")
+        }
+        
         create("universal") {
             dimension = "abi"
             ndk {
@@ -153,6 +176,8 @@ android {
             excludes += "META-INF/NOTICE.md"
             excludes += "META-INF/CONTRIBUTORS.md"
             excludes += "META-INF/LICENSE.md"
+            excludes += "META-INF/INDEX.LIST"
+            excludes += "META-INF/io.netty.versions.properties"
         }
     }
 }
@@ -206,12 +231,23 @@ dependencies {
     implementation(libs.media3)
     implementation(libs.media3.session)
     implementation(libs.media3.okhttp)
-    implementation(libs.squigglyslider)
+
+    // Google Cast - only included in GMS flavor (not available in F-Droid/FOSS builds)
+    "gmsImplementation"(libs.media3.cast)
+    "gmsImplementation"(libs.mediarouter)
+    "gmsImplementation"(libs.cast.framework)
 
     implementation(libs.room.runtime)
     implementation(libs.kuromoji.ipadic)
+    implementation(libs.tinypinyin)
+    implementation(libs.squigglyslider)
     ksp(libs.room.compiler)
     implementation(libs.room.ktx)
+
+    // Glance for Material 3 Expressive Widgets
+    implementation(libs.glance)
+    implementation(libs.glance.appwidget)
+    implementation(libs.glance.material3)
 
     implementation(libs.apache.lang3)
 
@@ -224,6 +260,8 @@ dependencies {
     implementation(project(":lrclib"))
     implementation(project(":kizzy"))
     implementation(project(":lastfm"))
+    implementation(project(":betterlyrics"))
+    implementation(project(":simpmusic"))
 
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.serialization.json)

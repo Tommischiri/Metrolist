@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.lyrics
 
 import android.content.Context
@@ -14,6 +19,7 @@ object YouTubeLyricsProvider : LyricsProvider {
         title: String,
         artist: String,
         duration: Int,
+        album: String?,
     ): Result<String> =
         runCatching {
             val nextResult = YouTube.next(WatchEndpoint(videoId = id)).getOrThrow()

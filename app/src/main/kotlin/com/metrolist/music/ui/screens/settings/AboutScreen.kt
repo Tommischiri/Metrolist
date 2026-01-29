@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.ui.screens.settings
 
 import androidx.compose.foundation.Image
@@ -153,7 +158,7 @@ fun AboutScreen(
             }
         }
 
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(8.dp))
 
         Text(
             text = "MO AGAMY",
@@ -166,7 +171,7 @@ fun AboutScreen(
         Row {
             IconButton(
                 onClick = {
-                    uriHandler.openUri("https://github.com/mostafaalagamy/metrolist")
+                    uriHandler.openUri("https://github.com/mostafaalagamy")
                 },
             ) {
                 Icon(
@@ -177,11 +182,22 @@ fun AboutScreen(
 
             IconButton(
                 onClick = {
-                    uriHandler.openUri("https://www.instagram.com/mostafaalagamy")
+                    uriHandler.openUri("https://buymeacoffee.com/mostafaalagamy")
                 }
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.instagram),
+                    painter = painterResource(R.drawable.buymeacoffee),
+                    contentDescription = null
+                )
+            }
+
+            IconButton(
+                onClick = {
+                    uriHandler.openUri("https://mostafaalagamy.github.io")
+                }
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.language),
                     contentDescription = null
                 )
             }
@@ -213,6 +229,28 @@ fun AboutScreen(
             color = MaterialTheme.colorScheme.secondary,
             modifier = Modifier.clickable {
                 uriHandler.openUri("https://github.com/FullerBread2032")
+            }
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        Text(
+            text = "Adriel O'Connel",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.clickable {
+                uriHandler.openUri("https://github.com/adrielGGmotion")
+            }
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        Text(
+            text = "Nyx",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.clickable {
+                uriHandler.openUri("https://github.com/nyxiereal")
             }
         )
 

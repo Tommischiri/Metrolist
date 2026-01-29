@@ -19,38 +19,51 @@ data class ArtistItemsPage(
 ) {
     companion object {
         fun fromMusicResponsiveListItemRenderer(renderer: MusicResponsiveListItemRenderer): SongItem? {
+            // Extract artists from flexColumns - try multiple approaches
+            val artists = renderer.flexColumns.getOrNull(1)
+                ?.musicResponsiveListItemFlexColumnRenderer?.text?.runs
+                ?.oddElements()?.map {
+                    Artist(
+                        name = it.text,
+                        id = it.navigationEndpoint?.browseEndpoint?.browseId
+                    )
+                }
+            
+            // Extract album from last flexColumn (like SimpMusic does)
+            val album = renderer.flexColumns.lastOrNull()
+                ?.musicResponsiveListItemFlexColumnRenderer?.text?.runs
+                ?.firstOrNull()?.let {
+                    if (it.navigationEndpoint?.browseEndpoint?.browseId != null) {
+                        Album(
+                            name = it.text,
+                            id = it.navigationEndpoint.browseEndpoint.browseId
+                        )
+                    } else null
+                }
+            
             return SongItem(
                 id = renderer.playlistItemData?.videoId ?: return null,
                 title = renderer.flexColumns.firstOrNull()
                     ?.musicResponsiveListItemFlexColumnRenderer?.text
                     ?.runs?.firstOrNull()?.text ?: return null,
-                artists = renderer.flexColumns.getOrNull(1)?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.oddElements()?.map {
-                    Artist(
-                        name = it.text,
-                        id = it.navigationEndpoint?.browseEndpoint?.browseId
-                    )
-                } ?: return null,
-                album = renderer.flexColumns.getOrNull(3)?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.firstOrNull()?.let {
-                    Album(
-                        name = it.text,
-                        id = it.navigationEndpoint?.browseEndpoint?.browseId ?: return null
-                    )
-                },
+                artists = artists ?: return null,
+                album = album,
                 duration = renderer.fixedColumns?.firstOrNull()
                     ?.musicResponsiveListItemFlexColumnRenderer?.text
                     ?.runs?.firstOrNull()
-                    ?.text?.parseTime() ?: return null,
+                    ?.text?.parseTime(),
+                musicVideoType = renderer.musicVideoType,
                 thumbnail = renderer.thumbnail?.musicThumbnailRenderer?.getThumbnailUrl() ?: return null,
                 explicit = renderer.badges?.find {
                     it.musicInlineBadgeRenderer?.icon?.iconType == "MUSIC_EXPLICIT_BADGE"
                 } != null,
                 endpoint = renderer.overlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchEndpoint,
                 libraryAddToken = PageHelper.extractFeedbackToken(renderer.menu?.menuRenderer?.items?.find {
-                    it.toggleMenuServiceItemRenderer?.defaultIcon?.iconType?.startsWith("LIBRARY_") == true
+                    PageHelper.isLibraryIcon(it.toggleMenuServiceItemRenderer?.defaultIcon?.iconType)
                 }?.toggleMenuServiceItemRenderer, "LIBRARY_ADD"),
                 libraryRemoveToken = PageHelper.extractFeedbackToken(renderer.menu?.menuRenderer?.items?.find {
-                    it.toggleMenuServiceItemRenderer?.defaultIcon?.iconType?.startsWith("LIBRARY_") == true
-                }?.toggleMenuServiceItemRenderer, "LIBRARY_SAVED")
+                    PageHelper.isLibraryIcon(it.toggleMenuServiceItemRenderer?.defaultIcon?.iconType)
+                }?.toggleMenuServiceItemRenderer, "LIBRARY_REMOVE")
             )
         }
 
@@ -81,6 +94,7 @@ data class ArtistItemsPage(
                     } ?: return null,
                     album = null,
                     duration = null,
+                    musicVideoType = renderer.musicVideoType,
                     thumbnail = renderer.thumbnailRenderer.musicThumbnailRenderer?.getThumbnailUrl() ?: return null,
                     endpoint = renderer.navigationEndpoint.watchEndpoint
                 )

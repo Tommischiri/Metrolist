@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.ui.menu
 
 import android.app.SearchManager
@@ -18,26 +23,25 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Switch
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.ListItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -53,15 +57,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.room.util.copy
 import com.metrolist.music.LocalDatabase
-import com.metrolist.music.LocalPlayerConnection
 import com.metrolist.music.R
 import com.metrolist.music.db.entities.LyricsEntity
 import com.metrolist.music.db.entities.SongEntity
 import com.metrolist.music.models.MediaMetadata
 import com.metrolist.music.ui.component.DefaultDialog
 import com.metrolist.music.ui.component.ListDialog
+import com.metrolist.music.ui.component.Material3MenuGroup
+import com.metrolist.music.ui.component.Material3MenuItemData
 import com.metrolist.music.ui.component.NewAction
 import com.metrolist.music.ui.component.NewActionGrid
 import com.metrolist.music.ui.component.TextFieldDialog
@@ -74,6 +78,7 @@ fun LyricsMenu(
     songProvider: () -> SongEntity?,
     mediaMetadataProvider: () -> MediaMetadata,
     onDismiss: () -> Unit,
+    onShowOffsetDialog: () -> Unit = {},
     viewModel: LyricsMenuViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
@@ -96,6 +101,7 @@ fun LyricsMenu(
                         LyricsEntity(
                             id = mediaMetadataProvider().id,
                             lyrics = it,
+                            provider = lyricsProvider()?.provider ?: "Manual",
                         ),
                     )
                 }
@@ -183,7 +189,8 @@ fun LyricsMenu(
                             searchMediaMetadata.id,
                             titleField.text,
                             artistField.text,
-                            searchMediaMetadata.duration
+                            searchMediaMetadata.duration,
+                            searchMediaMetadata.album?.title
                         )
                         showSearchResultDialog = true
                         
@@ -239,6 +246,7 @@ fun LyricsMenu(
                                     LyricsEntity(
                                         id = searchMediaMetadata.id,
                                         lyrics = result.lyrics,
+                                        provider = result.providerName,
                                     ),
                                 )
                             }
@@ -325,16 +333,21 @@ fun LyricsMenu(
     var showRomanization by rememberSaveable { mutableStateOf(false) }
     var isChecked by remember { mutableStateOf(songProvider()?.romanizeLyrics ?: true) }
 
+    var lyricsOffset by rememberSaveable { mutableIntStateOf(songProvider()?.lyricsOffset ?: 0) }
+
     // Sync isChecked with song changes
     LaunchedEffect(songProvider()) {
         isChecked = songProvider()?.romanizeLyrics ?: true
     }
-    
+
+    LaunchedEffect(songProvider()) {
+        lyricsOffset = songProvider()?.lyricsOffset ?: 0
+    }
+
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
     LazyColumn(
-        userScrollEnabled = !isPortrait,
         contentPadding = PaddingValues(
             start = 0.dp,
             top = 0.dp,
@@ -394,35 +407,59 @@ fun LyricsMenu(
         }
 
         item {
-            ListItem(
-                headlineContent = { Text(text = stringResource(R.string.romanize_current_track)) },
-                leadingContent = {
-                    Icon(
-                        painter = painterResource(R.drawable.language_korean_latin),
-                        contentDescription = null,
-                    )
-                },
-                trailingContent = {
-                    Switch(
-                        checked = isChecked,
-                        onCheckedChange = { newCheckedState ->
-                            isChecked = newCheckedState
+            Material3MenuGroup(
+                items = listOf(
+                    Material3MenuItemData(
+                        title = { Text(stringResource(R.string.lyrics_offset)) },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.fast_forward),
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = {
+                            onDismiss()
+                            onShowOffsetDialog()
+                        },
+                        trailingContent = {
+                            Text(
+                                text = "${if (lyricsOffset >= 0) "+" else ""}${lyricsOffset}ms",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    ),
+                    Material3MenuItemData(
+                        title = { Text(text = stringResource(R.string.romanize_current_track)) },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.language_korean_latin),
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = {
+                            isChecked = !isChecked
                             songProvider()?.let { song ->
                                 database.query {
-                                    upsert(song.copy(romanizeLyrics = newCheckedState))
+                                    upsert(song.copy(romanizeLyrics = isChecked))
                                 }
                             }
+                        },
+                        trailingContent = {
+                            Switch(
+                                checked = isChecked,
+                                onCheckedChange = { newCheckedState ->
+                                    isChecked = newCheckedState
+                                    songProvider()?.let { song ->
+                                        database.query {
+                                            upsert(song.copy(romanizeLyrics = newCheckedState))
+                                        }
+                                    }
+                                }
+                            )
                         }
                     )
-                },
-                modifier = Modifier.clickable {
-                    isChecked = !isChecked
-                    songProvider()?.let { song ->
-                        database.query {
-                            upsert(song.copy(romanizeLyrics = isChecked))
-                        }
-                    }
-                }
+                )
             )
         }
     }

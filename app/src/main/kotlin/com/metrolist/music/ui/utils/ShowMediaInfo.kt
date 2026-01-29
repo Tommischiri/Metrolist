@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.ui.utils
 
 import android.text.format.Formatter
@@ -18,7 +23,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicText
@@ -310,8 +314,7 @@ fun ShowMediaInfo(videoId: String) {
                                 modifier = Modifier
                             )
                             BasicText(
-                                text = "" + info?.viewCount?.toInt()
-                                    ?.let { numberFormatter(it) },
+                                text = info?.viewCount?.let(::numberFormatter).orEmpty(),
                                 style = MaterialTheme.typography.titleSmall.copy(color = MaterialTheme.colorScheme.onBackground),
                                 modifier = Modifier.padding(top = 8.dp)
                             )
@@ -323,7 +326,7 @@ fun ShowMediaInfo(videoId: String) {
                                 modifier = Modifier
                             )
                             BasicText(
-                                text = "" + info?.like?.toInt()?.let { numberFormatter(it) },
+                                text = info?.like?.let(::numberFormatter).orEmpty(),
                                 style = MaterialTheme.typography.titleSmall.copy(color = MaterialTheme.colorScheme.onBackground),
                                 modifier = Modifier.padding(top = 8.dp)
                             )
@@ -335,7 +338,7 @@ fun ShowMediaInfo(videoId: String) {
                                 modifier = Modifier
                             )
                             BasicText(
-                                text = "" + info?.dislike?.toInt()?.let { numberFormatter(it) },
+                                text = info?.dislike?.let(::numberFormatter).orEmpty(),
                                 style = MaterialTheme.typography.titleSmall.copy(color = MaterialTheme.colorScheme.onBackground),
                                 modifier = Modifier.padding(top = 8.dp)
                             )

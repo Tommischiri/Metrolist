@@ -20,11 +20,9 @@
     <string name="lyrics">Lời bài hát</string>
     <string name="already_in_playlist">Đã tồn tại trong danh sách phát:</string>
     <plurals name="n_element">
-        <item quantity="one">%d mục</item>
         <item quantity="other">%d mục</item>
     </plurals>
     <plurals name="n_time">
-        <item quantity="one">%d lần</item>
         <item quantity="other">%d lần</item>
     </plurals>
     <string name="similar_content">Nội dung tương tự</string>
@@ -33,7 +31,6 @@
     <string name="follow_theme">Dựa theo chủ đề</string>
     <string name="gradient">Độ phủ màu</string>
     <string name="player_background_blur">Làm mờ</string>
-    <string name="enable_squiggly_slider">Dùng thanh trượt xoắn hình sóng</string>
     <string name="enable_swipe_thumbnail">Bật lướt bìa để chuyển bài</string>
     <string name="lyrics_click_change">Thay đổi lời bài hát khi nhấp</string>
     <string name="slim">Dạng mỏng</string>
@@ -64,8 +61,8 @@
     <string name="min_playback_duration_description">Thời lượng nghe tối thiểu của 1 bài hát trước khi nó được đánh dấu là \"đã phát\"</string>
     <string name="percentage_format">%d%%</string>
     <string name="minimum_playback_duration">Thời lượng nghe tối thiểu</string>
-    <string name="clear_song_cache_dialog">  Bạn có muốn xóa tất cả bộ nhớ đệm (cache) liên quan đến nhạc?</string>
-    <string name="clear_downloads_dialog">  Bạn có muốn xóa tất cả bài hát đã tải xuống?</string>
+    <string name="clear_song_cache_dialog">Bạn có muốn xóa tất cả bộ nhớ đệm (cache) liên quan đến nhạc?</string>
+    <string name="clear_downloads_dialog">Bạn có muốn xóa tất cả bài hát đã tải xuống?</string>
     <string name="not_logged_in_youtube">Chưa đăng nhập vào YouTube</string>
     <string name="default_links">Mở đường liên kết được hỗ trợ</string>
     <string name="open_app_settings_error">Không thể mở ứng dụng cài đặt</string>
@@ -85,7 +82,6 @@
     <string name="likes">Thích</string>
     <string name="dislikes">Không thích</string>
     <plurals name="seconds">
-        <item quantity="one">1 giây</item>
         <item quantity="other">%d giây</item>
     </plurals>
     <string name="lyrics_auto_scroll">Tự động cuộn lời bài hát</string>
@@ -115,7 +111,7 @@
     <string name="link_copied">Link đã được sao chép vào bộ nhớ đệm</string>
     <string name="player_buttons_style">Màu của các nút trong trình phát</string>
     <string name="default_style">Mặc định</string>
-    <string name="secondary_color_style">Kiểu màu phụ</string>
+    <string name="secondary_color_style">Kiểu màu thứ cấp (phụ)</string>
     <string name="swipe_song_to_add">Lướt bài nhạc sang bên trái để thêm vào hàng chờ, lướt sang bên phải để phát ngay sau bài hiện đang phát</string>
     <string name="auto_playlists">Danh sách phát tự động</string>
     <string name="show_liked_playlist">Hiện danh sách phát đã yêu thích</string>
@@ -152,8 +148,8 @@
     <string name="maximum_volume">Âm lượng tối đa</string>
     <string name="seek_backward">5 giây lùi lại</string>
     <string name="seek_forward">5 giây chuyển tiếp</string>
-    <string name="seek_forward_dynamic">+%1$d giây chuyển tiếp</string>
-    <string name="seek_backward_dynamic">-%1$d giây ngược lại</string>
+    <string name="seek_forward_dynamic">+%1$d giây chuyển tiếp</string>
+    <string name="seek_backward_dynamic">-%1$d giây ngược lại</string>
     <string name="hide_player_thumbnail">Ẩn hình thu nhỏ của trình phát</string>
     <string name="hide_player_thumbnail_desc">Thay thế ảnh bìa album với logo ứng dụng trong trình phát</string>
     <string name="new_mini_player_design">Thiết kế trình phát mini mới</string>
@@ -200,4 +196,49 @@
     <string name="remove_custom_image">Xoá ảnh bìa tùy chỉnh</string>
     <string name="audio_offload">Cho phép giảm tải</string>
     <string name="audio_offload_description">Sử dụng đường dẫn giảm tải để phát. Tắt tính năng này có thể làm tiêu tốn pin nhưng có thể hữu ích nếu bạn gặp sự cố khi phát hoặc xử lý hậu kỳ</string>
+    <string name="top_result">Top kết quả</string>
+    <string name="other_results">Khác</string>
+    <string name="uploaded_playlist">Đã tải lên</string>
+    <string name="filter_uploaded">Đã tải lên</string>
+    <string name="download_playlist_desc">Tải tất cả các bài hát để phát ngoại tuyến</string>
+    <string name="remove_download_playlist_desc">Xóa tất cả các bài hát từ danh sách phát này</string>
+    <string name="download_in_progress_desc">Đang tiến hành tải xuống</string>
+    <string name="share_playlist_desc">Chia sẻ danh sách phát này</string>
+    <string name="delete_playlist_desc">Xóa danh sách phát này vĩnh viễn</string>
+    <string name="sync_playlist_desc">Đồng bộ danh sách phát với YouTube Music</string>
+    <string name="primary_color_style">Kiểu màu chính</string>
+    <string name="tertiary_color_style">Kiểu màu tam cấp (phụ)</string>
+    <string name="swipe_song_to_remove">Lướt bài hát để xóa khỏi danh sách phát</string>
+    <string name="lyrics_glow_effect">Bật hiệu ứng phát sáng cho lời bài hát</string>
+    <string name="lyrics_glow_effect_desc">Thêm hiệu ứng làm nổi bật và hiệu ứng bounce (nảy) cho phần lời bài hát đang được chọn</string>
+    <string name="enable_better_lyrics">Bật Better Lyrics</string>
+    <string name="enable_better_lyrics_desc">Bật Better Lyrics sẽ cung cấp lời bài hát được đồng bộ theo từng từ (dịch word-by-word)</string>
+    <string name="auto_scroll">Đồng bộ lại</string>
+    <string name="show_uploaded_playlist">Hiển thị danh sách phát \"Đã tải lên\"</string>
+    <string name="shuffle_playlist_first">Phát đảo trộn danh sách phát / Album</string>
+    <string name="shuffle_playlist_first_desc">Khi kích hoạt phát đảo trộn, nó sẽ phát tất cả các bài hát từ danh sách phát / Album trước, sau đó sẽ phát nội dung tương tự</string>
+    <string name="show_wrapped_card">Hiển thị thẻ Wrapped</string>
+    <string name="discord_use_details">Dùng chi tiết thay vì trạng thái</string>
+    <string name="discord_use_details_description">Hiện tên bài hát chính thay vì tên nghệ sĩ</string>
+    <string name="lyrics_romanize_chinese">Lời Romanize Chinese</string>
+    <string name="updater">Trình cập nhật</string>
+    <string name="check_for_updates">Tự động kiểm tra cập nhật</string>
+    <string name="update_notifications">Bật thông báo về cập nhật</string>
+    <string name="update_available_title">Đã có cập nhật mới</string>
+    <string name="update_channel_name">Cập nhật ứng dụng</string>
+    <string name="update_channel_desc">Thông báo về phiên bản mới của ứng dụng</string>
+    <string name="google_cast">Google Cast</string>
+    <string name="google_cast_description">Bật trình chiếu Audio đến Chromecast và các thiết bị khác có hỗ trợ tính năng trình chiếu (Cast)</string>
+    <string name="lyrics_romanize_macedonian">Lời Romanize Macedonian</string>
+    <string name="integrations">Tích hợp tiện ích</string>
+    <string name="username">Tên người dùng</string>
+    <string name="password">Mật khẩu</string>
+    <string name="lastfm_integration">Tích hợp Last.fm</string>
+    <string name="about_artist">Giới thiệu nghệ sĩ</string>
+    <string name="show_more">Hiển thị thêm</string>
+    <string name="show_less">Hiện ít hơn</string>
+    <string name="artist_page_settings">Trang nghệ sĩ</string>
+    <string name="show_artist_description">Hiển thị mô tả nghệ sĩ</string>
+    <string name="show_artist_subscriber_count">Hiện số lượng người đăng ký</string>
+    <string name="show_artist_monthly_listeners">Hiển thị số lượt nghe hằng tháng</string>
 </resources>

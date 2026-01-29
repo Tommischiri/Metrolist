@@ -1,7 +1,14 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.lyrics
 
 import android.text.format.DateUtils
 import com.atilika.kuromoji.ipadic.Tokenizer
+import com.github.promeg.pinyinhelper.Pinyin
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -266,14 +273,56 @@ object LyricsUtils {
         Tokenizer()
     }
 
-    fun parseLyrics(lyrics: String): List<LyricsEntry> =
-        lyrics
-            .lines()
-            .flatMap { line ->
-                parseLine(line).orEmpty()
-            }.sorted()
+    fun parseLyrics(lyrics: String): List<LyricsEntry> {
+        val lines = lyrics.lines()
+        val result = mutableListOf<LyricsEntry>()
+        
+        var i = 0
+        while (i < lines.size) {
+            val line = lines[i]
+            if (!line.trim().startsWith("<") || !line.trim().endsWith(">")) {
+                val entries = parseLine(line, null)
+                if (entries != null) {
+                    val wordTimestamps = if (i + 1 < lines.size) {
+                        val nextLine = lines[i + 1]
+                        if (nextLine.trim().startsWith("<") && nextLine.trim().endsWith(">")) {
+                            parseWordTimestamps(nextLine.trim().removeSurrounding("<", ">"))
+                        } else null
+                    } else null
+                    
+                    if (wordTimestamps != null) {
+                        result.addAll(entries.map { entry ->
+                            LyricsEntry(entry.time, entry.text, wordTimestamps)
+                        })
+                    } else {
+                        result.addAll(entries)
+                    }
+                }
+            }
+            i++
+        }
+        return result.sorted()
+    }
+    
+    private fun parseWordTimestamps(data: String): List<WordTimestamp>? {
+        if (data.isBlank()) return null
+        return try {
+            data.split("|").mapNotNull { wordData ->
+                val parts = wordData.split(":")
+                if (parts.size == 3) {
+                    WordTimestamp(
+                        text = parts[0],
+                        startTime = parts[1].toDouble(),
+                        endTime = parts[2].toDouble()
+                    )
+                } else null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
 
-    private fun parseLine(line: String): List<LyricsEntry>? {
+    private fun parseLine(line: String, words: List<WordTimestamp>? = null): List<LyricsEntry>? {
         if (line.isEmpty()) {
             return null
         }
@@ -292,7 +341,7 @@ object LyricsUtils {
                     mil *= 10
                 }
                 val time = min * DateUtils.MINUTE_IN_MILLIS + sec * DateUtils.SECOND_IN_MILLIS + mil
-                LyricsEntry(time, text)
+                LyricsEntry(time, text, words)
             }.toList()
     }
 
@@ -458,12 +507,31 @@ object LyricsUtils {
         romajaBuilder.toString()
     }
 
-
+    suspend fun romanizeChinese(text: String): String = withContext(Dispatchers.Default) {
+        if (text.isEmpty()) return@withContext ""
+        val builder = StringBuilder(text.length * 2)
+        for (ch in text) {
+            if (ch in '\u4E00'..'\u9FFF') {
+                val py = Pinyin.toPinyin(ch).lowercase(Locale.getDefault())
+                builder.append(py).append(' ')
+            } else {
+                builder.append(ch)
+            }
+        }
+        // Remove whitespaces before ASCII and CJK punctuations
+        builder.toString()
+            .replace(Regex("\\s+([,.!?;:])"), "$1")
+            .replace(Regex("\\s+([，。！？；：、（）《》〈〉【】『』「」])"), "$1")
+            .trim()
+    }
 
     suspend fun romanizeCyrillic(text: String): String? = withContext(Dispatchers.Default) {
         if (text.isEmpty()) return@withContext null
 
-        if (!text.any { it in '\u0400'..'\u04FF' }) {
+        val cyrillicChars = text.filter { it in '\u0400'..'\u04FF' }
+
+        if (cyrillicChars.isEmpty() ||
+            (cyrillicChars.length == 1 && (cyrillicChars[0] == 'е' || cyrillicChars[0] == 'Е'))) {
             return@withContext null
         }
 

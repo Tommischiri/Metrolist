@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.ui.screens.artist
 
 import android.content.ClipData
@@ -23,7 +28,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.width
@@ -85,20 +89,25 @@ import com.metrolist.innertube.models.WatchEndpoint
 import com.metrolist.music.LocalDatabase
 import com.metrolist.music.LocalPlayerAwareWindowInsets
 import com.metrolist.music.LocalPlayerConnection
+import com.metrolist.music.LocalListenTogetherManager
 import com.metrolist.music.R
 import com.metrolist.music.constants.AppBarHeight
 import com.metrolist.music.constants.HideExplicitKey
+import com.metrolist.music.constants.ShowArtistDescriptionKey
+import com.metrolist.music.constants.ShowArtistSubscriberCountKey
+import com.metrolist.music.constants.ShowMonthlyListenersKey
 import com.metrolist.music.db.entities.ArtistEntity
-import com.metrolist.music.extensions.togglePlayPause
 import com.metrolist.music.extensions.toMediaItem
 import com.metrolist.music.models.toMediaMetadata
 import com.metrolist.music.playback.queues.ListQueue
 import com.metrolist.music.playback.queues.YouTubeQueue
 import com.metrolist.music.ui.component.AlbumGridItem
 import com.metrolist.music.ui.component.AutoResizeText
+import com.metrolist.music.ui.component.ExpandableText
 import com.metrolist.music.ui.component.FontSizeRange
 import com.metrolist.music.ui.component.HideOnScrollFAB
 import com.metrolist.music.ui.component.IconButton
+import com.metrolist.music.ui.component.LinkSegment
 import com.metrolist.music.ui.component.LocalMenuState
 import com.metrolist.music.ui.component.NavigationTitle
 import com.metrolist.music.ui.component.SongListItem
@@ -138,13 +147,18 @@ fun ArtistScreen(
     val haptic = LocalHapticFeedback.current
     val coroutineScope = rememberCoroutineScope()
     val playerConnection = LocalPlayerConnection.current ?: return
-    val isPlaying by playerConnection.isPlaying.collectAsState()
+    val listenTogetherManager = LocalListenTogetherManager.current
+    val isGuest = listenTogetherManager?.isInRoom == true && !listenTogetherManager.isHost
+    val isPlaying by playerConnection.isEffectivelyPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val artistPage = viewModel.artistPage
     val libraryArtist by viewModel.libraryArtist.collectAsState()
     val librarySongs by viewModel.librarySongs.collectAsState()
     val libraryAlbums by viewModel.libraryAlbums.collectAsState()
     val hideExplicit by rememberPreference(key = HideExplicitKey, defaultValue = false)
+    val showArtistDescription by rememberPreference(key = ShowArtistDescriptionKey, defaultValue = true)
+    val showArtistSubscriberCount by rememberPreference(key = ShowArtistSubscriberCountKey, defaultValue = true)
+    val showMonthlyListeners by rememberPreference(key = ShowMonthlyListenersKey, defaultValue = true)
 
     val lazyListState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -372,7 +386,7 @@ fun ArtistScreen(
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         // Radio Button
-                                        if (!showLocal) {
+                                        if (!showLocal && !isGuest) {
                                             artistPage?.artist?.radioEndpoint?.let { radioEndpoint ->
                                                 OutlinedButton(
                                                     onClick = {
@@ -396,7 +410,7 @@ fun ArtistScreen(
                                         }
 
                                         // Shuffle Button
-                                        if (!showLocal) {
+                                        if (!showLocal && !isGuest) {
                                             artistPage?.artist?.shuffleEndpoint?.let { shuffleEndpoint ->
                                                 IconButton(
                                                     onClick = {
@@ -417,7 +431,7 @@ fun ArtistScreen(
                                                     )
                                                 }
                                             }
-                                        } else if (librarySongs.isNotEmpty()) {
+                                        } else if (librarySongs.isNotEmpty() && !isGuest) {
                                             IconButton(
                                                 onClick = {
                                                     val shuffledSongs = librarySongs.shuffled()
@@ -449,6 +463,68 @@ fun ArtistScreen(
                                 }
                             }
                             Spacer(modifier = Modifier.height(16.dp))
+                        }
+                    }
+                }
+
+                // About Artist Section
+                if (!showLocal && (showArtistDescription || showArtistSubscriberCount || showMonthlyListeners)) {
+                    val description = artistPage?.description
+                    val descriptionRuns = artistPage?.descriptionRuns
+                    val subscriberCount = artistPage?.subscriberCountText
+                    val monthlyListeners = artistPage?.monthlyListenerCount
+
+                    if ((showArtistDescription && !description.isNullOrEmpty()) ||
+                        (showArtistSubscriberCount && !subscriberCount.isNullOrEmpty()) ||
+                        (showMonthlyListeners && !monthlyListeners.isNullOrEmpty())) {
+                        item(key = "about_artist") {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp)
+                                    .padding(bottom = 16.dp)
+                                    .animateItem()
+                            ) {
+                                if (showArtistDescription && (!description.isNullOrEmpty() || !descriptionRuns.isNullOrEmpty())) {
+                                    Text(
+                                        text = stringResource(R.string.about_artist),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+                                }
+
+                                if (showArtistSubscriberCount && !subscriberCount.isNullOrEmpty()) {
+                                    Text(
+                                        text = subscriberCount,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(bottom = 4.dp)
+                                    )
+                                }
+
+                                if (showMonthlyListeners && !monthlyListeners.isNullOrEmpty()) {
+                                    Text(
+                                        text = monthlyListeners,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(bottom = if (showArtistDescription && !description.isNullOrEmpty()) 8.dp else 0.dp)
+                                    )
+                                }
+
+                                if (showArtistDescription && (!description.isNullOrEmpty() || !descriptionRuns.isNullOrEmpty())) {
+                                    ExpandableText(
+                                        text = description.orEmpty(),
+                                        runs = descriptionRuns?.map {
+                                            LinkSegment(
+                                                text = it.text,
+                                                url = it.navigationEndpoint?.urlEndpoint?.url
+                                            )
+                                        },
+                                        collapsedMaxLines = 3
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -502,7 +578,7 @@ fun ArtistScreen(
                                     .combinedClickable(
                                         onClick = {
                                             if (song.id == mediaMetadata?.id) {
-                                                playerConnection.player.togglePlayPause()
+                                                playerConnection.togglePlayPause()
                                             } else {
                                                 playerConnection.playQueue(
                                                     ListQueue(
@@ -629,7 +705,7 @@ fun ArtistScreen(
                                         .combinedClickable(
                                             onClick = {
                                                 if (song.id == mediaMetadata?.id) {
-                                                    playerConnection.player.togglePlayPause()
+                                                    playerConnection.togglePlayPause()
                                                 } else {
                                                     playerConnection.playQueue(
                                                         YouTubeQueue(
@@ -671,6 +747,7 @@ fun ArtistScreen(
                                             },
                                             isPlaying = isPlaying,
                                             coroutineScope = coroutineScope,
+                                            thumbnailRatio = 1f, // Use square thumbnails for all items in horizontal scroll
                                             modifier = Modifier
                                                 .combinedClickable(
                                                     onClick = {

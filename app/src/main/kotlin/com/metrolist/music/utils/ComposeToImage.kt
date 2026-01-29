@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.utils
 
 import android.content.ContentValues
@@ -39,7 +44,8 @@ object ComposeToImage {
         height: Int,
         backgroundColor: Int? = null,
         textColor: Int? = null,
-        secondaryTextColor: Int? = null
+        secondaryTextColor: Int? = null,
+        lyricsAlignment: Layout.Alignment = Layout.Alignment.ALIGN_CENTER
     ): Bitmap = withContext(Dispatchers.Default) {
         val cardSize = minOf(width, height) - 32
         val bitmap = createBitmap(cardSize, cardSize)
@@ -144,7 +150,7 @@ object ComposeToImage {
             lyricsLayout = StaticLayout.Builder.obtain(
                 lyrics, 0, lyrics.length, lyricsPaint, lyricsMaxWidth
             )
-                .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                .setAlignment(lyricsAlignment)
                 .setIncludePad(false)
                 .setLineSpacing(10f, 1.3f)
                 .setMaxLines(10)

@@ -40,7 +40,7 @@ open class KizzyRPC(token: String) {
         return discordWebSocket.isWebSocketConnected()
     }
 
-    suspend fun stopActivity() {
+    open suspend fun close() {
         if (!isRpcRunning()) {
             discordWebSocket.connect()
         }
@@ -73,6 +73,12 @@ open class KizzyRPC(token: String) {
         if (!isRpcRunning()) {
             discordWebSocket.connect()
         }
+        
+        val images = listOfNotNull(largeImage, smallImage)
+        val externalImages = images.filterIsInstance<RpcImage.ExternalImage>()
+        val imageUrls = externalImages.map { it.image }
+        val resolvedImages = kizzyRepository.getImages(imageUrls)?.results?.associate { it.originalUrl to it.id } ?: emptyMap()
+
         val presence = Presence(
             activities = listOf(
                 Activity(
@@ -85,8 +91,18 @@ open class KizzyRPC(token: String) {
                     statusDisplayType = statusDisplayType.value,
                     timestamps = Timestamps(startTime, endTime),
                     assets = Assets(
-                        largeImage = largeImage?.resolveImage(kizzyRepository),
-                        smallImage = smallImage?.resolveImage(kizzyRepository),
+                        largeImage = largeImage?.let { 
+                            when (it) {
+                                is RpcImage.DiscordImage -> "mp:${it.image}"
+                                is RpcImage.ExternalImage -> resolvedImages[it.image]
+                            }
+                        },
+                        smallImage = smallImage?.let { 
+                            when (it) {
+                                is RpcImage.DiscordImage -> "mp:${it.image}"
+                                is RpcImage.ExternalImage -> resolvedImages[it.image]
+                            }
+                        },
                         largeText = largeText,
                         smallText = smallText
                     ),
@@ -120,12 +136,12 @@ open class KizzyRPC(token: String) {
     companion object {
         suspend fun getUserInfo(token: String): Result<UserInfo> = runCatching {
             val client = HttpClient()
-            val response = client.get("https://discord.com/api/v9/users/@me") {
+            val response = client.get("https://discord.com/api/v10/users/@me") {
                 header("Authorization", token)
             }.bodyAsText()
             val json = JSONObject(response)
             val username = json.getString("username")
-            val name = json.getString("global_name")
+            val name = json.optString("global_name", username)
             client.close()
 
             UserInfo(username, name)

@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.constants
 
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -8,13 +13,17 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
+val EnableDynamicIconKey = booleanPreferencesKey("enableDynamicIcon")
 val DynamicThemeKey = booleanPreferencesKey("dynamicTheme")
 val DarkModeKey = stringPreferencesKey("darkMode")
 val PureBlackKey = booleanPreferencesKey("pureBlack")
+val PureBlackMiniPlayerKey = booleanPreferencesKey("pureBlackMiniPlayer")
+val MiniPlayerOutlineKey = booleanPreferencesKey("miniPlayerOutline")
 val DefaultOpenTabKey = stringPreferencesKey("defaultOpenTab")
 val SlimNavBarKey = booleanPreferencesKey("slimNavBar")
 val GridItemsSizeKey = stringPreferencesKey("gridItemSize")
 val SliderStyleKey = stringPreferencesKey("sliderStyle")
+val SquigglySliderKey = booleanPreferencesKey("squigglySlider")
 val SwipeToSongKey = booleanPreferencesKey("SwipeToSong")
 
 val BetterSwipeToSongKey = booleanPreferencesKey("BetterSwipeToSong")
@@ -22,12 +31,16 @@ val SwipeToRemoveSongKey = booleanPreferencesKey("SwipeToRemoveSong")
 val UseNewPlayerDesignKey= booleanPreferencesKey("useNewPlayerDesign")
 val UseNewMiniPlayerDesignKey = booleanPreferencesKey("useNewMiniPlayerDesign")
 val HidePlayerThumbnailKey = booleanPreferencesKey("hidePlayerThumbnail")
+val CropAlbumArtKey = booleanPreferencesKey("cropAlbumArt")
 val SeekExtraSeconds = booleanPreferencesKey("seekExtraSeconds")
+val PauseOnMute = booleanPreferencesKey("pauseOnMute")
+val KeepScreenOn = booleanPreferencesKey("keepScreenOn")
+val DeveloperModeKey = booleanPreferencesKey("developerMode")
 
 enum class SliderStyle {
     DEFAULT,
-    SQUIGGLY,
-    SLIM,
+    WAVY,
+    SLIM
 }
 
 const val SYSTEM_DEFAULT = "SYSTEM_DEFAULT"
@@ -36,13 +49,20 @@ val ContentLanguageKey = stringPreferencesKey("contentLanguage")
 val ContentCountryKey = stringPreferencesKey("contentCountry")
 val EnableKugouKey = booleanPreferencesKey("enableKugou")
 val EnableLrcLibKey = booleanPreferencesKey("enableLrclib")
+val EnableBetterLyricsKey = booleanPreferencesKey("enableBetterLyrics")
+val EnableSimpMusicKey = booleanPreferencesKey("enableSimpMusic")
 val HideExplicitKey = booleanPreferencesKey("hideExplicit")
+val HideVideoSongsKey = booleanPreferencesKey("hideVideoSongs")
+val ShowArtistDescriptionKey = booleanPreferencesKey("showArtistDescription")
+val ShowArtistSubscriberCountKey = booleanPreferencesKey("showArtistSubscriberCount")
+val ShowMonthlyListenersKey = booleanPreferencesKey("showMonthlyListeners")
 val ProxyEnabledKey = booleanPreferencesKey("proxyEnabled")
 val ProxyUrlKey = stringPreferencesKey("proxyUrl")
 val ProxyTypeKey = stringPreferencesKey("proxyType")
 val ProxyUsernameKey = stringPreferencesKey("proxyUsername")
 val ProxyPasswordKey = stringPreferencesKey("proxyPassword")
 val YtmSyncKey = booleanPreferencesKey("ytmSync")
+val SelectedYtmPlaylistsKey = stringPreferencesKey("selectedYtmPlaylists")
 val CheckForUpdatesKey = booleanPreferencesKey("checkForUpdates")
 val UpdateNotificationsEnabledKey = booleanPreferencesKey("updateNotifications")
 
@@ -53,11 +73,39 @@ enum class AudioQuality {
     HIGH,
     LOW,
 }
+
+val PlayerClientKey = stringPreferencesKey("playerClient")
+
+enum class PlayerClient {
+    ANDROID_VR,
+    WEB_REMIX,
+}
+
+val DecryptionLibraryKey = stringPreferencesKey("decryptionLibrary")
+
+/**
+ * Available decryption libraries for YouTube stream URL decryption.
+ * 
+ * - NEWPIPE_EXTRACTOR: Official NewPipe Extractor from TeamNewPipe (default, recommended)
+ * - PIPEPIPE_EXTRACTOR_API: PipePipe API-based decryption (MetroExtractor)
+ * 
+ * Note: Both libraries are used with automatic fallback. If the primary library fails,
+ * the system will automatically try the alternative library.
+ */
+enum class DecryptionLibrary {
+    NEWPIPE_EXTRACTOR,      // Official TeamNewPipe/NewPipeExtractor (default)
+    PIPEPIPE_EXTRACTOR_API, // MetroExtractor API-based
+}
+
 val AudioOffload = booleanPreferencesKey("enableOffload")
 
 val SpotifyLikeQueueKey = booleanPreferencesKey("spotifyLikeQueue")
 val PersistentQueueKey = booleanPreferencesKey("persistentQueue")
+val PersistentShuffleAcrossQueuesKey = booleanPreferencesKey("persistentShuffleAcrossQueues")
+val RememberShuffleAndRepeatKey = booleanPreferencesKey("rememberShuffleAndRepeat")
+val ShuffleModeKey = booleanPreferencesKey("shuffleMode")
 val SkipSilenceKey = booleanPreferencesKey("skipSilence")
+val SkipSilenceInstantKey = booleanPreferencesKey("skipSilenceInstant")
 val AudioNormalizationKey = booleanPreferencesKey("audioNormalization")
 val AutoLoadMoreKey = booleanPreferencesKey("autoLoadMore")
 val DisableLoadMoreWhenRepeatAllKey = booleanPreferencesKey("disableLoadMoreWhenRepeatAll")
@@ -65,6 +113,7 @@ val AutoDownloadOnLikeKey = booleanPreferencesKey("autoDownloadOnLike")
 val SimilarContent = booleanPreferencesKey("similarContent")
 val AutoSkipNextOnErrorKey = booleanPreferencesKey("autoSkipNextOnError")
 val StopMusicOnTaskClearKey = booleanPreferencesKey("stopMusicOnTaskClear")
+val ShufflePlaylistFirstKey = booleanPreferencesKey("shufflePlaylistFirst")
 
 val MaxImageCacheSizeKey = intPreferencesKey("maxImageCacheSize")
 val MaxSongCacheSizeKey = intPreferencesKey("maxSongCacheSize")
@@ -79,6 +128,20 @@ val DiscordUsernameKey = stringPreferencesKey("discordUsername")
 val DiscordNameKey = stringPreferencesKey("discordName")
 val EnableDiscordRPCKey = booleanPreferencesKey("discordRPCEnable")
 val DiscordUseDetailsKey = booleanPreferencesKey("discordUseDetails")
+
+// Google Cast
+val EnableGoogleCastKey = booleanPreferencesKey("enableGoogleCast")
+
+// Listen Together
+val ListenTogetherServerUrlKey = stringPreferencesKey("listenTogetherServerUrl")
+val ListenTogetherUsernameKey = stringPreferencesKey("listenTogetherUsername")
+val EnableListenTogetherKey = booleanPreferencesKey("enableListenTogether")
+// Session persistence for reconnection
+val ListenTogetherSessionTokenKey = stringPreferencesKey("listenTogetherSessionToken")
+val ListenTogetherRoomCodeKey = stringPreferencesKey("listenTogetherRoomCode")
+val ListenTogetherUserIdKey = stringPreferencesKey("listenTogetherUserId")
+val ListenTogetherIsHostKey = booleanPreferencesKey("listenTogetherIsHost")
+val ListenTogetherSessionTimestampKey = longPreferencesKey("listenTogetherSessionTimestamp")
 
 val LastFMSessionKey = stringPreferencesKey("lastfmSession")
 val LastFMUsernameKey = stringPreferencesKey("lastfmUsername")
@@ -104,6 +167,8 @@ val AlbumSortTypeKey = stringPreferencesKey("albumSortType")
 val AlbumSortDescendingKey = booleanPreferencesKey("albumSortDescending")
 val PlaylistSortTypeKey = stringPreferencesKey("playlistSortType")
 val PlaylistSortDescendingKey = booleanPreferencesKey("playlistSortDescending")
+val AddToPlaylistSortTypeKey = stringPreferencesKey("addToPlaylistSortType")
+val AddToPlaylistSortDescendingKey = booleanPreferencesKey("playlistSortDescending")
 val ArtistSongSortTypeKey = stringPreferencesKey("artistSongSortType")
 val ArtistSongSortDescendingKey = booleanPreferencesKey("artistSongSortDescending")
 val MixSortTypeKey = stringPreferencesKey("mixSortType")
@@ -118,6 +183,10 @@ val LastLibSongSyncKey = longPreferencesKey("last_library_song_sync")
 val LastAlbumSyncKey = longPreferencesKey("last_album_sync")
 val LastArtistSyncKey = longPreferencesKey("last_artist_sync")
 val LastPlaylistSyncKey = longPreferencesKey("last_playlist_sync")
+val LastFullSyncKey = longPreferencesKey("last_full_sync")
+
+// Sync cooldown in seconds (30 minutes)
+const val SYNC_COOLDOWN = 30 * 60L
 
 val ArtistViewTypeKey = stringPreferencesKey("artistViewType")
 val AlbumViewTypeKey = stringPreferencesKey("albumViewType")
@@ -127,6 +196,8 @@ val PlaylistEditLockKey = booleanPreferencesKey("playlistEditLock")
 val QuickPicksKey = stringPreferencesKey("discover")
 val PreferredLyricsProviderKey = stringPreferencesKey("lyricsProvider")
 val QueueEditLockKey = booleanPreferencesKey("queueEditLock")
+val ShowWrappedCardKey = booleanPreferencesKey("show_wrapped_card")
+val WrappedSeenKey = booleanPreferencesKey("wrapped_seen")
 
 val ShowLikedPlaylistKey = booleanPreferencesKey("show_liked_playlist")
 val ShowDownloadedPlaylistKey = booleanPreferencesKey("show_downloaded_playlist")
@@ -277,11 +348,14 @@ enum class QuickPicks {
 enum class PreferredLyricsProvider {
     LRCLIB,
     KUGOU,
+    BETTER_LYRICS,
+    SIMPMUSIC,
 }
 
 enum class PlayerButtonsStyle {
     DEFAULT,
-    SECONDARY,
+    PRIMARY,
+    TERTIARY
 }
 
 enum class PlayerBackgroundStyle {
@@ -301,6 +375,7 @@ val LyricsClickKey = booleanPreferencesKey("lyricsClick")
 val LyricsScrollKey = booleanPreferencesKey("lyricsScrollKey")
 val LyricsRomanizeJapaneseKey = booleanPreferencesKey("lyricsRomanizeJapanese")
 val LyricsRomanizeKoreanKey = booleanPreferencesKey("lyricsRomanizeKorean")
+val LyricsRomanizeChineseKey = booleanPreferencesKey("lyricsRomanizeChinese")
 val LyricsRomanizeRussianKey = booleanPreferencesKey("lyricsRomanizeRussian")
 val LyricsRomanizeUkrainianKey = booleanPreferencesKey("lyricsRomanizeUkrainian")
 val LyricsRomanizeSerbianKey = booleanPreferencesKey("lyricsRomanizeSerbian")
@@ -310,6 +385,20 @@ val LyricsRomanizeKyrgyzKey = booleanPreferencesKey("lyricsRomanizeKyrgyz")
 val LyricsRomanizeMacedonianKey = booleanPreferencesKey("lyricsRomanizeMacedonian")
 val LyricsRomanizeCyrillicByLineKey = booleanPreferencesKey("lyricsRomanizeCyrillicByLine")
 val TranslateLyricsKey = booleanPreferencesKey("translateLyrics")
+val LyricsGlowEffectKey = booleanPreferencesKey("lyricsGlowEffect")
+
+val LyricsAnimationStyleKey = stringPreferencesKey("lyricsAnimationStyle")
+enum class LyricsAnimationStyle {
+    NONE,
+    FADE,
+    GLOW,
+    SLIDE,
+    KARAOKE,
+    APPLE,
+}
+
+val LyricsTextSizeKey = floatPreferencesKey("lyricsTextSize")
+val LyricsLineSpacingKey = floatPreferencesKey("lyricsLineSpacing")
 
 val PlayerVolumeKey = floatPreferencesKey("playerVolume")
 val RepeatModeKey = intPreferencesKey("repeatMode")

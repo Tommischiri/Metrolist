@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.playback
 
 import android.content.Context
@@ -15,6 +20,7 @@ import com.metrolist.music.extensions.currentMetadata
 import com.metrolist.music.extensions.getCurrentQueueIndex
 import com.metrolist.music.extensions.getQueueWindows
 import com.metrolist.music.extensions.metadata
+import com.metrolist.music.extensions.togglePlayPause
 import com.metrolist.music.playback.MusicService.MusicBinder
 import com.metrolist.music.playback.queues.Queue
 import com.metrolist.music.utils.reportException
@@ -46,6 +52,20 @@ class PlayerConnection(
             SharingStarted.Lazily,
             player.playWhenReady && player.playbackState != STATE_ENDED
         )
+    
+    // Effective playing state - considers Cast when active
+    val isEffectivelyPlaying = combine(
+        isPlaying,
+        service.castConnectionHandler?.isCasting ?: MutableStateFlow(false),
+        service.castConnectionHandler?.castIsPlaying ?: MutableStateFlow(false)
+    ) { localPlaying, isCasting, castPlaying ->
+        if (isCasting) castPlaying else localPlaying
+    }.stateIn(
+        scope,
+        SharingStarted.Lazily,
+        player.playWhenReady && player.playbackState != STATE_ENDED
+    )
+    
     val mediaMetadata = MutableStateFlow(player.currentMetadata)
     val currentSong =
         mediaMetadata.flatMapLatest {
@@ -71,7 +91,19 @@ class PlayerConnection(
     val canSkipNext = MutableStateFlow(true)
 
     val error = MutableStateFlow<PlaybackException?>(null)
+    val isMuted = service.isMuted
+
     val waitingForNetworkConnection = service.waitingForNetworkConnection
+    
+    // Callback to check if playback changes should be blocked (e.g., Listen Together guest)
+    var shouldBlockPlaybackChanges: (() -> Boolean)? = null
+    
+    // Flag to allow internal sync operations to bypass blocking (set by ListenTogetherManager)
+    @Volatile
+    var allowInternalSync: Boolean = false
+
+    var onSkipPrevious: (() -> Unit)? = null
+    var onSkipNext: (() -> Unit)? = null
 
     init {
         player.addListener(this)
@@ -88,22 +120,42 @@ class PlayerConnection(
     }
 
     fun playQueue(queue: Queue) {
+        // Block if Listen Together guest (but allow internal sync)
+        if (!allowInternalSync && shouldBlockPlaybackChanges?.invoke() == true) {
+            android.util.Log.d("PlayerConnection", "playQueue blocked - Listen Together guest")
+            return
+        }
         service.playQueue(queue)
     }
 
     fun startRadioSeamlessly() {
+        // Block if Listen Together guest
+        if (shouldBlockPlaybackChanges?.invoke() == true) {
+            android.util.Log.d("PlayerConnection", "startRadioSeamlessly blocked - Listen Together guest")
+            return
+        }
         service.startRadioSeamlessly()
     }
 
     fun playNext(item: MediaItem) = playNext(listOf(item))
 
     fun playNext(items: List<MediaItem>) {
+        // Block if Listen Together guest (unless internal sync)
+        if (!allowInternalSync && shouldBlockPlaybackChanges?.invoke() == true) {
+            android.util.Log.d("PlayerConnection", "playNext blocked - Listen Together guest")
+            return
+        }
         service.playNext(items)
     }
 
     fun addToQueue(item: MediaItem) = addToQueue(listOf(item))
 
     fun addToQueue(items: List<MediaItem>) {
+        // Block if Listen Together guest (unless internal sync)
+        if (!allowInternalSync && shouldBlockPlaybackChanges?.invoke() == true) {
+            android.util.Log.d("PlayerConnection", "addToQueue blocked - Listen Together guest")
+            return
+        }
         service.addToQueue(items)
     }
 
@@ -111,16 +163,108 @@ class PlayerConnection(
         service.toggleLike()
     }
 
-    fun seekToNext() {
-        player.seekToNext()
-        player.prepare()
-        player.playWhenReady = true
+    fun toggleMute() {
+        service.toggleMute()
     }
 
-    fun seekToPrevious() {
-        player.seekToPrevious()
-        player.prepare()
+    /**
+     * Toggle play/pause - handles Cast when active
+     */
+    fun togglePlayPause() {
+        val castHandler = service.castConnectionHandler
+        if (castHandler?.isCasting?.value == true) {
+            if (castHandler.castIsPlaying.value) {
+                castHandler.pause()
+            } else {
+                castHandler.play()
+            }
+        } else {
+            player.togglePlayPause()
+        }
+    }
+    
+    /**
+     * Start playback - handles Cast when active
+     */
+    fun play() {
+        val castHandler = service.castConnectionHandler
+        if (castHandler?.isCasting?.value == true) {
+            castHandler.play()
+        } else {
+            if (player.playbackState == Player.STATE_IDLE) {
+                player.prepare()
+            }
+            player.playWhenReady = true
+        }
+    }
+    
+    /**
+     * Pause playback - handles Cast when active
+     */
+    fun pause() {
+        val castHandler = service.castConnectionHandler
+        if (castHandler?.isCasting?.value == true) {
+            castHandler.pause()
+        } else {
+            player.playWhenReady = false
+        }
+    }
+
+    /**
+     * Seek to position - handles Cast when active
+     */
+    fun seekTo(position: Long) {
+        val castHandler = service.castConnectionHandler
+        if (castHandler?.isCasting?.value == true) {
+            castHandler.seekTo(position)
+        } else {
+            player.seekTo(position)
+        }
+    }
+
+    fun seekToNext() {
+        // When casting, use Cast skip instead of local player
+        val castHandler = service.castConnectionHandler
+        if (castHandler?.isCasting?.value == true) {
+            castHandler.skipToNext()
+            return
+        }
+        player.seekToNext()
+        if (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED) {
+            player.prepare()
+        }
         player.playWhenReady = true
+        onSkipNext?.invoke()
+    }
+
+    var onRestartSong: (() -> Unit)? = null
+
+    fun seekToPrevious() {
+        // When casting, use Cast skip instead of local player
+        val castHandler = service.castConnectionHandler
+        if (castHandler?.isCasting?.value == true) {
+            castHandler.skipToPrevious()
+            return
+        }
+
+        // Logic to mimic standard seekToPrevious behavior but with explicit callbacks
+        // If we are more than 3 seconds in, just restart the song
+        if (player.currentPosition > 3000 || !player.hasPreviousMediaItem()) {
+            player.seekTo(0)
+            if (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED) {
+                player.prepare()
+            }
+            player.playWhenReady = true
+            onRestartSong?.invoke()
+        } else {
+            // Otherwise go to previous media item
+            player.seekToPreviousMediaItem()
+            if (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED) {
+                player.prepare()
+            }
+            player.playWhenReady = true
+            onSkipPrevious?.invoke()
+        }
     }
 
     override fun onPlaybackStateChanged(state: Int) {

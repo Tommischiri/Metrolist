@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.ui.screens.search
 
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -5,7 +10,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -31,7 +35,6 @@ import com.metrolist.music.db.entities.Artist
 import com.metrolist.music.db.entities.Playlist
 import com.metrolist.music.db.entities.Song
 import com.metrolist.music.extensions.toMediaItem
-import com.metrolist.music.extensions.togglePlayPause
 import com.metrolist.music.playback.queues.ListQueue
 import com.metrolist.music.ui.component.*
 import com.metrolist.music.ui.menu.SongMenu
@@ -55,7 +58,7 @@ fun LocalSearchScreen(
     val menuState = LocalMenuState.current
     val playerConnection = LocalPlayerConnection.current ?: return
 
-    val isPlaying by playerConnection.isPlaying.collectAsState()
+    val isPlaying by playerConnection.isEffectivelyPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val searchFilter by viewModel.filter.collectAsState()
@@ -180,7 +183,7 @@ fun LocalSearchScreen(
                                 .combinedClickable(
                                     onClick = {
                                         if (item.id == mediaMetadata?.id) {
-                                            playerConnection.player.togglePlayPause()
+                                            playerConnection.togglePlayPause()
                                         } else {
                                             val songs = result.map
                                                 .getOrDefault(LocalFilter.SONG, emptyList())

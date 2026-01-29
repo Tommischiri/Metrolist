@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.viewmodels
 
 import androidx.compose.runtime.getValue
@@ -8,6 +13,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.metrolist.innertube.YouTube
 import com.metrolist.innertube.models.filterExplicit
+import com.metrolist.innertube.models.filterVideoSongs
 import com.metrolist.innertube.pages.ArtistPage
 import com.metrolist.music.db.MusicDatabase
 import com.metrolist.music.utils.reportException
@@ -19,8 +25,10 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import android.content.Context
 import com.metrolist.music.constants.HideExplicitKey
+import com.metrolist.music.constants.HideVideoSongsKey
 import com.metrolist.music.extensions.filterExplicit
 import com.metrolist.music.extensions.filterExplicitAlbums
+import com.metrolist.music.extensions.filterVideoSongs as filterVideoSongsLocal
 import com.metrolist.music.utils.dataStore
 import com.metrolist.music.utils.get
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -41,10 +49,10 @@ class ArtistViewModel @Inject constructor(
     val libraryArtist = database.artist(artistId)
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
     val librarySongs = context.dataStore.data
-        .map { it[HideExplicitKey] ?: false }
+        .map { (it[HideExplicitKey] ?: false) to (it[HideVideoSongsKey] ?: false) }
         .distinctUntilChanged()
-        .flatMapLatest { hideExplicit ->
-            database.artistSongsPreview(artistId).map { it.filterExplicit(hideExplicit) }
+        .flatMapLatest { (hideExplicit, hideVideoSongs) ->
+            database.artistSongsPreview(artistId).map { it.filterExplicit(hideExplicit).filterVideoSongsLocal(hideVideoSongs) }
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     val libraryAlbums = context.dataStore.data
@@ -59,7 +67,7 @@ class ArtistViewModel @Inject constructor(
         // Load artist page and reload when hide explicit setting changes
         viewModelScope.launch {
             context.dataStore.data
-                .map { it[HideExplicitKey] ?: false }
+                .map { (it[HideExplicitKey] ?: false) to (it[HideVideoSongsKey] ?: false) }
                 .distinctUntilChanged()
                 .collect {
                     fetchArtistsFromYTM()
@@ -70,15 +78,14 @@ class ArtistViewModel @Inject constructor(
     fun fetchArtistsFromYTM() {
         viewModelScope.launch {
             val hideExplicit = context.dataStore.get(HideExplicitKey, false)
+            val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
             YouTube.artist(artistId)
                 .onSuccess { page ->
                     val filteredSections = page.sections
-                        .filterNot { section ->
-                            section.moreEndpoint?.browseId?.startsWith("MPLAUC") == true
-                        }
                         .map { section ->
-                            section.copy(items = section.items.filterExplicit(hideExplicit))
+                            section.copy(items = section.items.filterExplicit(hideExplicit).filterVideoSongs(hideVideoSongs))
                         }
+                        .filter { section -> section.items.isNotEmpty() }
 
                     artistPage = page.copy(sections = filteredSections)
                 }.onFailure {

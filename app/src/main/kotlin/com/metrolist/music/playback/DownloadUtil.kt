@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.playback
 
 import android.content.Context
@@ -15,6 +20,10 @@ import androidx.media3.exoplayer.offline.DownloadNotificationHelper
 import com.metrolist.innertube.YouTube
 import com.metrolist.music.constants.AudioQuality
 import com.metrolist.music.constants.AudioQualityKey
+import com.metrolist.music.constants.DecryptionLibrary
+import com.metrolist.music.constants.DecryptionLibraryKey
+import com.metrolist.music.constants.PlayerClient
+import com.metrolist.music.constants.PlayerClientKey
 import com.metrolist.music.db.MusicDatabase
 import com.metrolist.music.db.entities.FormatEntity
 import com.metrolist.music.db.entities.SongEntity
@@ -43,6 +52,8 @@ constructor(
 ) {
     private val connectivityManager = context.getSystemService<ConnectivityManager>()!!
     private val audioQuality by enumPreference(context, AudioQualityKey, AudioQuality.AUTO)
+    private val playerClient by enumPreference(context, PlayerClientKey, PlayerClient.ANDROID_VR)
+    private val decryptionLibrary by enumPreference(context, DecryptionLibraryKey, DecryptionLibrary.NEWPIPE_EXTRACTOR)
     private val songUrlCache = HashMap<String, Pair<String, Long>>()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -76,7 +87,7 @@ constructor(
                 return@Factory dataSpec
             }
 
-            songUrlCache[mediaId]?.takeIf { it.second < System.currentTimeMillis() }?.let {
+            songUrlCache[mediaId]?.takeIf { it.second > System.currentTimeMillis() }?.let {
                 return@Factory dataSpec.withUri(it.first.toUri())
             }
 
@@ -85,6 +96,8 @@ constructor(
                     mediaId,
                     audioQuality = audioQuality,
                     connectivityManager = connectivityManager,
+                    playerClient = playerClient,
+                    decryptionLibrary = decryptionLibrary,
                 )
             }.getOrThrow()
             val format = playbackData.format
@@ -100,6 +113,7 @@ constructor(
                         sampleRate = format.audioSampleRate,
                         contentLength = format.contentLength!!,
                         loudnessDb = playbackData.audioConfig?.loudnessDb,
+                        perceptualLoudnessDb = playbackData.audioConfig?.perceptualLoudnessDb,
                         playbackUrl = playbackData.playbackTracking?.videostatsPlaybackUrl?.baseUrl
                     ),
                 )
@@ -131,7 +145,7 @@ constructor(
                 "${it}&range=0-${format.contentLength ?: 10000000}"
             }
 
-            songUrlCache[mediaId] = streamUrl to playbackData.streamExpiresInSeconds * 1000L
+            songUrlCache[mediaId] = streamUrl to (System.currentTimeMillis() + playbackData.streamExpiresInSeconds * 1000L)
             dataSpec.withUri(streamUrl.toUri())
         }
 

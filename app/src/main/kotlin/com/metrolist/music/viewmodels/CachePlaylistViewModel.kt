@@ -1,12 +1,19 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.viewmodels
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.metrolist.music.constants.HideExplicitKey
+import com.metrolist.music.constants.HideVideoSongsKey
 import com.metrolist.music.db.MusicDatabase
 import com.metrolist.music.db.entities.Song
 import com.metrolist.music.extensions.filterExplicit
+import com.metrolist.music.extensions.filterVideoSongs
 import com.metrolist.music.utils.dataStore
 import com.metrolist.music.utils.get
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,8 +42,9 @@ class CachePlaylistViewModel @Inject constructor(
         viewModelScope.launch {
             while (true) {
                 val hideExplicit = context.dataStore.get(HideExplicitKey, false)
-                val cachedIds = playerCache.keys.mapNotNull { it?.toString() }.toSet()
-                val downloadedIds = downloadCache.keys.mapNotNull { it?.toString() }.toSet()
+                val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
+                val cachedIds = playerCache.keys.toSet()
+                val downloadedIds = downloadCache.keys.toSet()
                 val pureCacheIds = cachedIds.subtract(downloadedIds)
 
                 val songs = if (pureCacheIds.isNotEmpty()) {
@@ -64,6 +72,7 @@ class CachePlaylistViewModel @Inject constructor(
                     .filter { it.song.dateDownload != null }
                     .sortedByDescending { it.song.dateDownload }
                     .filterExplicit(hideExplicit)
+                    .filterVideoSongs(hideVideoSongs)
 
                 delay(1000)
             }

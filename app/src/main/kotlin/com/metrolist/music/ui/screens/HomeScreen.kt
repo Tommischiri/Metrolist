@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.ui.screens
 
 import androidx.activity.compose.BackHandler
@@ -19,7 +24,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -39,11 +43,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ContainedLoadingIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
@@ -59,8 +71,16 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.Font
+import java.time.LocalDate
+import com.metrolist.music.R
+import com.metrolist.music.constants.WrappedSeenKey
+import androidx.compose.material3.SnackbarHostState
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.metrolist.music.constants.ShowWrappedCardKey
 import androidx.navigation.compose.currentBackStackEntryAsState
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
@@ -78,9 +98,12 @@ import com.metrolist.innertube.utils.parseCookieString
 import com.metrolist.music.LocalDatabase
 import com.metrolist.music.LocalPlayerAwareWindowInsets
 import com.metrolist.music.LocalPlayerConnection
-import com.metrolist.music.R
+import com.metrolist.music.constants.GridItemSize
+import com.metrolist.music.constants.GridItemsSizeKey
 import com.metrolist.music.constants.GridThumbnailHeight
+import com.metrolist.music.constants.SmallGridThumbnailHeight
 import com.metrolist.music.constants.InnerTubeCookieKey
+import com.metrolist.music.utils.rememberEnumPreference
 import com.metrolist.music.constants.ListItemHeight
 import com.metrolist.music.constants.ListThumbnailSize
 import com.metrolist.music.constants.ThumbnailCornerRadius
@@ -89,7 +112,6 @@ import com.metrolist.music.db.entities.Artist
 import com.metrolist.music.db.entities.LocalItem
 import com.metrolist.music.db.entities.Playlist
 import com.metrolist.music.db.entities.Song
-import com.metrolist.music.extensions.togglePlayPause
 import com.metrolist.music.models.toMediaMetadata
 import com.metrolist.music.playback.queues.ListQueue
 import com.metrolist.music.playback.queues.LocalAlbumRadio
@@ -129,10 +151,11 @@ import kotlinx.coroutines.withContext
 import kotlin.math.min
 import kotlin.random.Random
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HomeScreen(
     navController: NavController,
+    snackbarHostState: SnackbarHostState,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val menuState = LocalMenuState.current
@@ -141,7 +164,7 @@ fun HomeScreen(
     val playerConnection = LocalPlayerConnection.current ?: return
     val haptic = LocalHapticFeedback.current
 
-    val isPlaying by playerConnection.isPlaying.collectAsState()
+    val isPlaying by playerConnection.isEffectivelyPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val quickPicks by viewModel.quickPicks.collectAsState()
@@ -167,6 +190,11 @@ fun HomeScreen(
     val accountName by viewModel.accountName.collectAsState()
     val accountImageUrl by viewModel.accountImageUrl.collectAsState()
     val innerTubeCookie by rememberPreference(InnerTubeCookieKey, "")
+
+    val shouldShowWrappedCard by viewModel.showWrappedCard.collectAsState()
+    val wrappedState by viewModel.wrappedManager.state.collectAsState()
+    val isWrappedDataReady = wrappedState.isDataReady
+
     val isLoggedIn = remember(innerTubeCookie) {
         "SAPISID" in parseCookieString(innerTubeCookie)
     }
@@ -174,9 +202,24 @@ fun HomeScreen(
 
     val scope = rememberCoroutineScope()
     val lazylistState = rememberLazyListState()
+    val gridItemSize by rememberEnumPreference(GridItemsSizeKey, GridItemSize.BIG)
+    val currentGridHeight = if (gridItemSize == GridItemSize.BIG) GridThumbnailHeight else SmallGridThumbnailHeight
     val backStackEntry by navController.currentBackStackEntryAsState()
     val scrollToTop =
         backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsState()
+
+    val wrappedDismissed by backStackEntry?.savedStateHandle?.getStateFlow("wrapped_seen", false)
+        ?.collectAsState() ?: remember { mutableStateOf(false) }
+
+    LaunchedEffect(wrappedDismissed) {
+        if (wrappedDismissed) {
+            viewModel.markWrappedAsSeen()
+            scope.launch {
+                snackbarHostState.showSnackbar("Found in Settings > Content")
+            }
+            backStackEntry?.savedStateHandle?.set("wrapped_seen", false) // Reset the value
+        }
+    }
 
     LaunchedEffect(scrollToTop?.value) {
         if (scrollToTop?.value == true) {
@@ -211,7 +254,7 @@ fun HomeScreen(
                     .combinedClickable(
                         onClick = {
                             if (it.id == mediaMetadata?.id) {
-                                playerConnection.player.togglePlayPause()
+                                playerConnection.togglePlayPause()
                             } else {
                                 playerConnection.playQueue(
                                     YouTubeQueue.radio(it.toMediaMetadata()),
@@ -395,6 +438,60 @@ fun HomeScreen(
             }
 
             if (selectedChip == null) {
+                item(key = "wrapped_card") {
+                    AnimatedVisibility(visible = shouldShowWrappedCard) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            ),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (isWrappedDataReady) {
+                                    Column(
+                                        modifier = Modifier.padding(16.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
+                                    ) {
+                                        val bbhFont = try {
+                                            FontFamily(Font(R.font.bbh_bartle_regular))
+                                        } catch (e: Exception) {
+                                            FontFamily.Default
+                                        }
+                                        Text(
+                                            text = stringResource(R.string.wrapped_ready_title),
+                                            style = MaterialTheme.typography.headlineLarge.copy(
+                                                fontFamily = bbhFont,
+                                                textAlign = TextAlign.Center
+                                            )
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = stringResource(R.string.wrapped_ready_subtitle),
+                                            style = MaterialTheme.typography.bodyLarge.copy(
+                                                textAlign = TextAlign.Center
+                                            )
+                                        )
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Button(onClick = {
+                                            navController.navigate("wrapped")
+                                        }) {
+                                            Text(stringResource(R.string.open))
+                                        }
+                                    }
+                                } else {
+                                    ContainedLoadingIndicator()
+                                }
+                            }
+                        }
+                    }
+                }
                 quickPicks?.takeIf { it.isNotEmpty() }?.let { quickPicks ->
                     item(key = "quick_picks_title") {
                         NavigationTitle(
@@ -452,7 +549,7 @@ fun HomeScreen(
                                         .combinedClickable(
                                             onClick = {
                                                 if (song!!.id == mediaMetadata?.id) {
-                                                    playerConnection.player.togglePlayPause()
+                                                    playerConnection.togglePlayPause()
                                                 } else {
                                                     playerConnection.playQueue(
                                                         YouTubeQueue.radio(
@@ -495,7 +592,7 @@ fun HomeScreen(
                                 .asPaddingValues(),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height((GridThumbnailHeight + with(LocalDensity.current) {
+                                .height((currentGridHeight + with(LocalDensity.current) {
                                     MaterialTheme.typography.bodyLarge.lineHeight.toDp() * 2 +
                                             MaterialTheme.typography.bodyMedium.lineHeight.toDp() * 2
                                 }) * rows)
@@ -623,7 +720,7 @@ fun HomeScreen(
                                         .combinedClickable(
                                             onClick = {
                                                 if (song!!.id == mediaMetadata?.id) {
-                                                    playerConnection.player.togglePlayPause()
+                                                    playerConnection.togglePlayPause()
                                                 } else {
                                                     playerConnection.playQueue(
                                                         YouTubeQueue.radio(
@@ -716,12 +813,16 @@ fun HomeScreen(
                                 )
                             }
                         },
-                        onClick = section.endpoint?.browseId?.let { browseId ->
+                        onClick = section.endpoint?.let { endpoint ->
                             {
-                                if (browseId == "FEmusic_moods_and_genres")
-                                    navController.navigate("mood_and_genres")
-                                else
-                                    navController.navigate("browse/$browseId")
+                                when {
+                                    endpoint.browseId == "FEmusic_moods_and_genres" -> 
+                                        navController.navigate("mood_and_genres")
+                                    endpoint.params != null -> 
+                                        navController.navigate("youtube_browse/${endpoint.browseId}?params=${endpoint.params}")
+                                    else -> 
+                                        navController.navigate("browse/${endpoint.browseId}")
+                                }
                             }
                         },
                         modifier = Modifier.animateItem()

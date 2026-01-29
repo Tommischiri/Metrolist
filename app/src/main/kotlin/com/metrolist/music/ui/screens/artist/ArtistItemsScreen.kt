@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.ui.screens.artist
 
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -39,9 +44,11 @@ import com.metrolist.innertube.models.WatchEndpoint
 import com.metrolist.music.LocalPlayerAwareWindowInsets
 import com.metrolist.music.LocalPlayerConnection
 import com.metrolist.music.R
+import com.metrolist.music.constants.GridItemSize
+import com.metrolist.music.constants.GridItemsSizeKey
 import com.metrolist.music.constants.GridThumbnailHeight
-import com.metrolist.music.extensions.togglePlayPause
 import com.metrolist.music.models.toMediaMetadata
+import com.metrolist.music.utils.rememberEnumPreference
 import com.metrolist.music.playback.queues.YouTubeQueue
 import com.metrolist.music.ui.component.IconButton
 import com.metrolist.music.ui.component.LocalMenuState
@@ -67,12 +74,13 @@ fun ArtistItemsScreen(
     val menuState = LocalMenuState.current
     val haptic = LocalHapticFeedback.current
     val playerConnection = LocalPlayerConnection.current ?: return
-    val isPlaying by playerConnection.isPlaying.collectAsState()
+    val isPlaying by playerConnection.isEffectivelyPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val lazyListState = rememberLazyListState()
     val lazyGridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
+    val gridItemSize by rememberEnumPreference(GridItemsSizeKey, GridItemSize.BIG)
 
     val title by viewModel.title.collectAsState()
     val itemsPage by viewModel.itemsPage.collectAsState()
@@ -170,7 +178,7 @@ fun ArtistItemsScreen(
                             when (item) {
                                 is SongItem -> {
                                     if (item.id == mediaMetadata?.id) {
-                                        playerConnection.player.togglePlayPause()
+                                        playerConnection.togglePlayPause()
                                     } else {
                                         playerConnection.playQueue(
                                             YouTubeQueue(
@@ -202,7 +210,7 @@ fun ArtistItemsScreen(
     } else {
         LazyVerticalGrid(
             state = lazyGridState,
-            columns = GridCells.Adaptive(minSize = GridThumbnailHeight + 24.dp),
+            columns = GridCells.Adaptive(minSize = GridThumbnailHeight + if (gridItemSize == GridItemSize.BIG) 24.dp else (-24).dp),
             contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
         ) {
             items(

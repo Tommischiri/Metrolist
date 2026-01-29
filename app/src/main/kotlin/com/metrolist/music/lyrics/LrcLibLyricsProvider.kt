@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.lyrics
 
 import android.content.Context
@@ -16,15 +21,17 @@ object LrcLibLyricsProvider : LyricsProvider {
         title: String,
         artist: String,
         duration: Int,
-    ): Result<String> = LrcLib.getLyrics(title, artist, duration)
+        album: String?,
+    ): Result<String> = LrcLib.getLyrics(title, artist, duration, album)
 
     override suspend fun getAllLyrics(
         id: String,
         title: String,
         artist: String,
         duration: Int,
+        album: String?,
         callback: (String) -> Unit,
     ) {
-        LrcLib.getAllLyrics(title, artist, duration, null, callback)
+        LrcLib.getAllLyrics(title, artist, duration, album, callback)
     }
 }

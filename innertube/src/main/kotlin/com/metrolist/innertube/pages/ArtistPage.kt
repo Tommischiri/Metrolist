@@ -10,6 +10,7 @@ import com.metrolist.innertube.models.MusicResponsiveListItemRenderer
 import com.metrolist.innertube.models.MusicShelfRenderer
 import com.metrolist.innertube.models.MusicTwoRowItemRenderer
 import com.metrolist.innertube.models.PlaylistItem
+import com.metrolist.innertube.models.Run
 import com.metrolist.innertube.models.SectionListRenderer
 import com.metrolist.innertube.models.SongItem
 import com.metrolist.innertube.models.YTItem
@@ -27,6 +28,9 @@ data class ArtistPage(
     val artist: ArtistItem,
     val sections: List<ArtistSection>,
     val description: String?,
+    val subscriberCountText: String?,
+    val monthlyListenerCount: String? = null,
+    val descriptionRuns: List<Run>? = null,
 ) {
     companion object {
         fun fromSectionListRendererContent(content: SectionListRenderer.Content): ArtistSection? {
@@ -50,9 +54,11 @@ data class ArtistPage(
         private fun fromMusicCarouselShelfRenderer(renderer: MusicCarouselShelfRenderer): ArtistSection? {
             return ArtistSection(
                 title = renderer.header?.musicCarouselShelfBasicHeaderRenderer?.title?.runs?.firstOrNull()?.text ?: return null,
-                items = renderer.contents.mapNotNull {
-                    it.musicTwoRowItemRenderer?.let { renderer ->
-                        fromMusicTwoRowItemRenderer(renderer)
+                items = renderer.contents.mapNotNull { content ->
+                    content.musicTwoRowItemRenderer?.let { twoRowRenderer ->
+                        fromMusicTwoRowItemRenderer(twoRowRenderer)
+                    } ?: content.musicResponsiveListItemRenderer?.let { listItemRenderer ->
+                        fromMusicResponsiveListItemRenderer(listItemRenderer)
                     }
                 }.ifEmpty { null } ?: return null,
                 moreEndpoint = renderer.header.musicCarouselShelfBasicHeaderRenderer.moreContentButton?.buttonRenderer?.navigationEndpoint?.browseEndpoint
@@ -60,24 +66,37 @@ data class ArtistPage(
         }
 
         private fun fromMusicResponsiveListItemRenderer(renderer: MusicResponsiveListItemRenderer): SongItem? {
+            // Extract artists from flexColumns (like SimpMusic)
+            val artists = renderer.flexColumns.getOrNull(1)
+                ?.musicResponsiveListItemFlexColumnRenderer?.text?.runs
+                ?.oddElements()?.map {
+                    Artist(
+                        name = it.text,
+                        id = it.navigationEndpoint?.browseEndpoint?.browseId
+                    )
+                }
+            
+            // Extract album from last flexColumn (like SimpMusic)
+            val album = renderer.flexColumns.lastOrNull()
+                ?.musicResponsiveListItemFlexColumnRenderer?.text?.runs
+                ?.firstOrNull()?.let {
+                    if (it.navigationEndpoint?.browseEndpoint?.browseId != null) {
+                        Album(
+                            name = it.text,
+                            id = it.navigationEndpoint.browseEndpoint.browseId
+                        )
+                    } else null
+                }
+            
             return SongItem(
                 id = renderer.playlistItemData?.videoId ?: return null,
                 title = renderer.flexColumns.firstOrNull()
                     ?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.firstOrNull()
                     ?.text ?: return null,
-                artists = PageHelper.extractRuns(renderer.flexColumns, "MUSIC_PAGE_TYPE_ARTIST").ifEmpty { renderer.flexColumns.getOrNull(1)?.musicResponsiveListItemFlexColumnRenderer?.text?.runs }?.oddElements()?.map {
-                    Artist(
-                        name = it.text,
-                        id = it.navigationEndpoint?.browseEndpoint?.browseId
-                    )
-                } ?: return null,
-                album = PageHelper.extractRuns(renderer.flexColumns, "MUSIC_PAGE_TYPE_ALBUM").ifEmpty { renderer.flexColumns.getOrNull(3)?.musicResponsiveListItemFlexColumnRenderer?.text?.runs }?.firstOrNull()?.let {
-                    Album(
-                        name = it.text,
-                        id = it.navigationEndpoint?.browseEndpoint?.browseId ?: return@let null
-                    )
-                },
+                artists = artists ?: return null,
+                album = album,
                 duration = null,
+                musicVideoType = renderer.musicVideoType,
                 thumbnail = renderer.thumbnail?.musicThumbnailRenderer?.getThumbnailUrl() ?: return null,
                 explicit = renderer.badges?.find {
                     it.musicInlineBadgeRenderer?.icon?.iconType == "MUSIC_EXPLICIT_BADGE"
@@ -85,11 +104,11 @@ data class ArtistPage(
                 endpoint = renderer.overlay?.musicItemThumbnailOverlayRenderer?.content
                     ?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchEndpoint,
                 libraryAddToken = PageHelper.extractFeedbackToken(renderer.menu?.menuRenderer?.items?.find {
-                    it.toggleMenuServiceItemRenderer?.defaultIcon?.iconType?.startsWith("LIBRARY_") == true
+                    PageHelper.isLibraryIcon(it.toggleMenuServiceItemRenderer?.defaultIcon?.iconType)
                 }?.toggleMenuServiceItemRenderer, "LIBRARY_ADD"),
                 libraryRemoveToken = PageHelper.extractFeedbackToken(renderer.menu?.menuRenderer?.items?.find {
-                    it.toggleMenuServiceItemRenderer?.defaultIcon?.iconType?.startsWith("LIBRARY_") == true
-                }?.toggleMenuServiceItemRenderer, "LIBRARY_SAVED")
+                    PageHelper.isLibraryIcon(it.toggleMenuServiceItemRenderer?.defaultIcon?.iconType)
+                }?.toggleMenuServiceItemRenderer, "LIBRARY_REMOVE")
             )
         }
 
@@ -107,6 +126,7 @@ data class ArtistPage(
                         }),
                         album = null,
                         duration = null,
+                        musicVideoType = renderer.musicVideoType,
                         thumbnail = renderer.thumbnailRenderer.musicThumbnailRenderer?.getThumbnailUrl() ?: return null,
                         explicit = renderer.subtitleBadges?.find {
                             it.musicInlineBadgeRenderer?.icon?.iconType == "MUSIC_EXPLICIT_BADGE"

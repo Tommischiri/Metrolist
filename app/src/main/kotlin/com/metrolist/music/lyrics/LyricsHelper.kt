@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.lyrics
 
 import android.content.Context
@@ -32,6 +37,8 @@ constructor(
 ) {
     private var lyricsProviders =
         listOf(
+            BetterLyricsProvider,
+            SimpMusicLyricsProvider,
             LrcLibLyricsProvider,
             KuGouLyricsProvider,
             YouTubeSubtitleLyricsProvider,
@@ -44,33 +51,51 @@ constructor(
                 it[PreferredLyricsProviderKey].toEnum(PreferredLyricsProvider.LRCLIB)
             }.distinctUntilChanged()
             .map {
-                lyricsProviders =
-                    if (it == PreferredLyricsProvider.LRCLIB) {
-                        listOf(
-                            LrcLibLyricsProvider,
-                            KuGouLyricsProvider,
-                            YouTubeSubtitleLyricsProvider,
-                            YouTubeLyricsProvider
-                        )
-                    } else {
-                        listOf(
-                            KuGouLyricsProvider,
-                            LrcLibLyricsProvider,
-                            YouTubeSubtitleLyricsProvider,
-                            YouTubeLyricsProvider
-                        )
-                    }
+                lyricsProviders = when (it) {
+                    PreferredLyricsProvider.LRCLIB -> listOf(
+                        BetterLyricsProvider,
+                        LrcLibLyricsProvider,
+                        SimpMusicLyricsProvider,
+                        KuGouLyricsProvider,
+                        YouTubeSubtitleLyricsProvider,
+                        YouTubeLyricsProvider
+                    )
+                    PreferredLyricsProvider.KUGOU -> listOf(
+                        BetterLyricsProvider,
+                        KuGouLyricsProvider,
+                        SimpMusicLyricsProvider,
+                        LrcLibLyricsProvider,
+                        YouTubeSubtitleLyricsProvider,
+                        YouTubeLyricsProvider
+                    )
+                    PreferredLyricsProvider.BETTER_LYRICS -> listOf(
+                        BetterLyricsProvider,
+                        SimpMusicLyricsProvider,
+                        LrcLibLyricsProvider,
+                        KuGouLyricsProvider,
+                        YouTubeSubtitleLyricsProvider,
+                        YouTubeLyricsProvider
+                    )
+                    PreferredLyricsProvider.SIMPMUSIC -> listOf(
+                        BetterLyricsProvider,
+                        SimpMusicLyricsProvider,
+                        LrcLibLyricsProvider,
+                        KuGouLyricsProvider,
+                        YouTubeSubtitleLyricsProvider,
+                        YouTubeLyricsProvider
+                    )
+                }
             }
 
     private val cache = LruCache<String, List<LyricsResult>>(MAX_CACHE_SIZE)
     private var currentLyricsJob: Job? = null
 
-    suspend fun getLyrics(mediaMetadata: MediaMetadata): String {
+    suspend fun getLyrics(mediaMetadata: MediaMetadata): LyricsWithProvider {
         currentLyricsJob?.cancel()
 
         val cached = cache.get(mediaMetadata.id)?.firstOrNull()
         if (cached != null) {
-            return cached.lyrics
+            return LyricsWithProvider(cached.lyrics, cached.providerName)
         }
 
         // Check network connectivity before making network requests
@@ -84,7 +109,7 @@ constructor(
         
         if (!isNetworkAvailable) {
             // Still proceed but return not found to avoid hanging
-            return LYRICS_NOT_FOUND
+            return LyricsWithProvider(LYRICS_NOT_FOUND, "Unknown")
         }
 
         val scope = CoroutineScope(SupervisorJob())
@@ -97,9 +122,10 @@ constructor(
                             mediaMetadata.title,
                             mediaMetadata.artists.joinToString { it.name },
                             mediaMetadata.duration,
+                            mediaMetadata.album?.title,
                         )
                         result.onSuccess { lyrics ->
-                            return@async lyrics
+                            return@async LyricsWithProvider(lyrics, provider.name)
                         }.onFailure {
                             reportException(it)
                         }
@@ -109,12 +135,12 @@ constructor(
                     }
                 }
             }
-            return@async LYRICS_NOT_FOUND
+            return@async LyricsWithProvider(LYRICS_NOT_FOUND, "Unknown")
         }
 
-        val lyrics = deferred.await()
+        val result = deferred.await()
         scope.cancel()
-        return lyrics
+        return result
     }
 
     suspend fun getAllLyrics(
@@ -122,6 +148,7 @@ constructor(
         songTitle: String,
         songArtists: String,
         duration: Int,
+        album: String? = null,
         callback: (LyricsResult) -> Unit,
     ) {
         currentLyricsJob?.cancel()
@@ -153,7 +180,7 @@ constructor(
             lyricsProviders.forEach { provider ->
                 if (provider.isEnabled(context)) {
                     try {
-                        provider.getAllLyrics(mediaId, songTitle, songArtists, duration) { lyrics ->
+                        provider.getAllLyrics(mediaId, songTitle, songArtists, duration, album) { lyrics ->
                             val result = LyricsResult(provider.name, lyrics)
                             allResult += result
                             callback(result)
@@ -183,4 +210,9 @@ constructor(
 data class LyricsResult(
     val providerName: String,
     val lyrics: String,
+)
+
+data class LyricsWithProvider(
+    val lyrics: String,
+    val provider: String,
 )

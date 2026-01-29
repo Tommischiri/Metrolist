@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.ui.screens.settings
 
 import android.annotation.TargetApi
@@ -29,8 +34,11 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
@@ -57,7 +65,10 @@ import com.metrolist.innertube.YouTube
 import com.metrolist.music.LocalPlayerAwareWindowInsets
 import com.metrolist.music.R
 import com.metrolist.music.constants.*
-import com.metrolist.music.ui.component.*
+import com.metrolist.music.ui.component.EnumDialog
+import com.metrolist.music.ui.component.IconButton
+import com.metrolist.music.ui.component.Material3SettingsGroup
+import com.metrolist.music.ui.component.Material3SettingsItem
 import com.metrolist.music.ui.utils.backToMain
 import com.metrolist.music.utils.rememberEnumPreference
 import com.metrolist.music.utils.rememberPreference
@@ -80,6 +91,10 @@ fun ContentSettings(
     val (contentLanguage, onContentLanguageChange) = rememberPreference(key = ContentLanguageKey, defaultValue = "system")
     val (contentCountry, onContentCountryChange) = rememberPreference(key = ContentCountryKey, defaultValue = "system")
     val (hideExplicit, onHideExplicitChange) = rememberPreference(key = HideExplicitKey, defaultValue = false)
+    val (hideVideoSongs, onHideVideoSongsChange) = rememberPreference(key = HideVideoSongsKey, defaultValue = false)
+    val (showArtistDescription, onShowArtistDescriptionChange) = rememberPreference(key = ShowArtistDescriptionKey, defaultValue = true)
+    val (showArtistSubscriberCount, onShowArtistSubscriberCountChange) = rememberPreference(key = ShowArtistSubscriberCountKey, defaultValue = true)
+    val (showMonthlyListeners, onShowMonthlyListenersChange) = rememberPreference(key = ShowMonthlyListenersKey, defaultValue = true)
     val (proxyEnabled, onProxyEnabledChange) = rememberPreference(key = ProxyEnabledKey, defaultValue = false)
     val (proxyType, onProxyTypeChange) = rememberEnumPreference(key = ProxyTypeKey, defaultValue = Proxy.Type.HTTP)
     val (proxyUrl, onProxyUrlChange) = rememberPreference(key = ProxyUrlKey, defaultValue = "host:port")
@@ -87,13 +102,16 @@ fun ContentSettings(
     val (proxyPassword, onProxyPasswordChange) = rememberPreference(key = ProxyPasswordKey, defaultValue = "password")
     val (enableKugou, onEnableKugouChange) = rememberPreference(key = EnableKugouKey, defaultValue = true)
     val (enableLrclib, onEnableLrclibChange) = rememberPreference(key = EnableLrcLibKey, defaultValue = true)
+    val (enableBetterLyrics, onEnableBetterLyricsChange) = rememberPreference(key = EnableBetterLyricsKey, defaultValue = true)
+    val (enableSimpMusic, onEnableSimpMusicChange) = rememberPreference(key = EnableSimpMusicKey, defaultValue = true)
     val (preferredProvider, onPreferredProviderChange) =
         rememberEnumPreference(
             key = PreferredLyricsProviderKey,
-            defaultValue = PreferredLyricsProvider.LRCLIB,
+            defaultValue = PreferredLyricsProvider.BETTER_LYRICS,
         )
     val (lengthTop, onLengthTopChange) = rememberPreference(key = TopSize, defaultValue = "50")
     val (quickPicks, onQuickPicksChange) = rememberEnumPreference(key = QuickPicksKey, defaultValue = QuickPicks.QUICK_PICKS)
+    val (showWrappedCard, onShowWrappedCardChange) = rememberPreference(key = ShowWrappedCardKey, defaultValue = false)
 
     var showProxyConfigurationDialog by rememberSaveable {
         mutableStateOf(false)
@@ -218,169 +236,529 @@ fun ContentSettings(
         )
     }
 
-    Column(
-        Modifier
-            .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
-            .verticalScroll(rememberScrollState()),
-    ) {
-        PreferenceGroupTitle(title = stringResource(R.string.general))
-        ListPreference(
-            title = { Text(stringResource(R.string.content_language)) },
-            icon = { Icon(painterResource(R.drawable.language), null) },
-            selectedValue = contentLanguage,
-            values = listOf(SYSTEM_DEFAULT) + LanguageCodeToName.keys.toList(),
+    var showContentLanguageDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    if (showContentLanguageDialog) {
+        EnumDialog(
+            onDismiss = { showContentLanguageDialog = false },
+            onSelect = {
+                onContentLanguageChange(it)
+                showContentLanguageDialog = false
+            },
+            title = stringResource(R.string.content_language),
+            current = contentLanguage,
+            values = (listOf(SYSTEM_DEFAULT) + LanguageCodeToName.keys.toList()),
             valueText = {
                 LanguageCodeToName.getOrElse(it) { stringResource(R.string.system_default) }
-            },
-            onValueSelected = { newValue ->
-                val locale = Locale.getDefault()
-                val languageTag = locale.toLanguageTag().replace("-Hant", "")
- 
-                YouTube.locale = YouTube.locale.copy(
-                    hl = newValue.takeIf { it != SYSTEM_DEFAULT }
-                        ?: locale.language.takeIf { it in LanguageCodeToName }
-                        ?: languageTag.takeIf { it in LanguageCodeToName }
-                        ?: "en"
-                )
- 
-                onContentLanguageChange(newValue)
             }
         )
-        ListPreference(
-            title = { Text(stringResource(R.string.content_country)) },
-            icon = { Icon(painterResource(R.drawable.location_on), null) },
-            selectedValue = contentCountry,
-            values = listOf(SYSTEM_DEFAULT) + CountryCodeToName.keys.toList(),
+    }
+
+    var showContentCountryDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    if (showContentCountryDialog) {
+        EnumDialog(
+            onDismiss = { showContentCountryDialog = false },
+            onSelect = {
+                onContentCountryChange(it)
+                showContentCountryDialog = false
+            },
+            title = stringResource(R.string.content_country),
+            current = contentCountry,
+            values = (listOf(SYSTEM_DEFAULT) + CountryCodeToName.keys.toList()),
             valueText = {
                 CountryCodeToName.getOrElse(it) { stringResource(R.string.system_default) }
+            }
+        )
+    }
+
+    var showAppLanguageDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    if (showAppLanguageDialog) {
+        EnumDialog(
+            onDismiss = { showAppLanguageDialog = false },
+            onSelect = {
+                onAppLanguageChange(it)
+                showAppLanguageDialog = false
             },
-            onValueSelected = { newValue ->
-                val locale = Locale.getDefault()
- 
-                YouTube.locale = YouTube.locale.copy(
-                    gl = newValue.takeIf { it != SYSTEM_DEFAULT }
-                        ?: locale.country.takeIf { it in CountryCodeToName }
-                        ?: "US"
-                )
- 
-                onContentCountryChange(newValue)
-           }
+            title = stringResource(R.string.app_language),
+            current = appLanguage,
+            values = (listOf(SYSTEM_DEFAULT) + LanguageCodeToName.keys.toList()),
+            valueText = {
+                LanguageCodeToName.getOrElse(it) { stringResource(R.string.system_default) }
+            }
         )
+    }
 
-        SwitchPreference(
-            title = { Text(stringResource(R.string.hide_explicit)) },
-            icon = { Icon(painterResource(R.drawable.explicit), null) },
-            checked = hideExplicit,
-            onCheckedChange = onHideExplicitChange,
-        )
+    var showPreferredProviderDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
 
-        PreferenceGroupTitle(title = stringResource(R.string.app_language))
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            PreferenceEntry(
-                title = { Text(stringResource(R.string.app_language)) },
-                icon = { Icon(painterResource(R.drawable.language), null) },
-                onClick = {
-                    context.startActivity(
-                        Intent(
-                            Settings.ACTION_APP_LOCALE_SETTINGS,
-                            "package:${context.packageName}".toUri()
-                        )
-                    )
-                }
-            )
-        }
-        // Support for Android versions before Android 13
-        else {
-            ListPreference(
-                title = { Text(stringResource(R.string.app_language)) },
-                icon = { Icon(painterResource(R.drawable.language), null) },
-                selectedValue = appLanguage,
-                values = listOf(SYSTEM_DEFAULT) + LanguageCodeToName.keys.toList(),
-                valueText = {
-                    LanguageCodeToName.getOrElse(it) { stringResource(R.string.system_default) }
-                },
-                onValueSelected = { langTag ->
-                    val newLocale = langTag
-                        .takeUnless { it == SYSTEM_DEFAULT }
-                        ?.let { Locale.forLanguageTag(it) }
-                        ?: Locale.getDefault()
-
-                    onAppLanguageChange(langTag)
-                    setAppLocale(context, newLocale)
-
-                }
-            )
-        }
-
-        PreferenceGroupTitle(title = stringResource(R.string.proxy))
-        SwitchPreference(
-            title = { Text(stringResource(R.string.enable_proxy)) },
-            icon = { Icon(painterResource(R.drawable.wifi_proxy), null) },
-            checked = proxyEnabled,
-            onCheckedChange = onProxyEnabledChange,
-        )
-        if (proxyEnabled) {
-            PreferenceEntry(
-                title = { Text(stringResource(R.string.config_proxy)) },
-                icon = { Icon(painterResource(R.drawable.settings), null) },
-                onClick = {showProxyConfigurationDialog = true}
-            )
-        }
-
-        PreferenceGroupTitle(title = stringResource(R.string.lyrics))
-        SwitchPreference(
-            title = { Text(stringResource(R.string.enable_lrclib)) },
-            icon = { Icon(painterResource(R.drawable.lyrics), null) },
-            checked = enableLrclib,
-            onCheckedChange = onEnableLrclibChange,
-        )
-        SwitchPreference(
-            title = { Text(stringResource(R.string.enable_kugou)) },
-            icon = { Icon(painterResource(R.drawable.lyrics), null) },
-            checked = enableKugou,
-            onCheckedChange = onEnableKugouChange,
-        )
-        ListPreference(
-            title = { Text(stringResource(R.string.set_first_lyrics_provider)) },
-            icon = { Icon(painterResource(R.drawable.lyrics), null) },
-            selectedValue = preferredProvider,
-            values = listOf(PreferredLyricsProvider.LRCLIB, PreferredLyricsProvider.KUGOU),
+    if (showPreferredProviderDialog) {
+        EnumDialog(
+            onDismiss = { showPreferredProviderDialog = false },
+            onSelect = {
+                onPreferredProviderChange(it)
+                showPreferredProviderDialog = false
+            },
+            title = stringResource(R.string.set_first_lyrics_provider),
+            current = preferredProvider,
+            values = PreferredLyricsProvider.values().toList(),
             valueText = {
                 when (it) {
                     PreferredLyricsProvider.LRCLIB -> "LrcLib"
                     PreferredLyricsProvider.KUGOU -> "KuGou"
+                    PreferredLyricsProvider.BETTER_LYRICS -> "Better Lyrics"
+                    PreferredLyricsProvider.SIMPMUSIC -> "SimpMusic"
                 }
+            }
+        )
+    }
+
+    var showQuickPicksDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    if (showQuickPicksDialog) {
+        EnumDialog(
+            onDismiss = { showQuickPicksDialog = false },
+            onSelect = {
+                onQuickPicksChange(it)
+                showQuickPicksDialog = false
             },
-            onValueSelected = onPreferredProviderChange,
-        )
-
-        PreferenceEntry(
-            title = { Text(stringResource(R.string.lyrics_romanization)) },
-            icon = { Icon(painterResource(R.drawable.language_korean_latin), null) },
-            onClick = { navController.navigate("settings/content/romanization") }
-        )
-
-        PreferenceGroupTitle(title = stringResource(R.string.misc))
-        EditTextPreference(
-            title = { Text(stringResource(R.string.top_length)) },
-            icon = { Icon(painterResource(R.drawable.trending_up), null) },
-            value = lengthTop,
-            isInputValid = { it.toIntOrNull()?.let { num -> num > 0 } == true },
-            onValueChange = onLengthTopChange,
-        )
-        ListPreference(
-            title = { Text(stringResource(R.string.set_quick_picks)) },
-            icon = { Icon(painterResource(R.drawable.home_outlined), null) },
-            selectedValue = quickPicks,
-            values = listOf(QuickPicks.QUICK_PICKS, QuickPicks.LAST_LISTEN),
+            title = stringResource(R.string.set_quick_picks),
+            current = quickPicks,
+            values = QuickPicks.values().toList(),
             valueText = {
                 when (it) {
                     QuickPicks.QUICK_PICKS -> stringResource(R.string.quick_picks)
                     QuickPicks.LAST_LISTEN -> stringResource(R.string.last_song_listened)
                 }
-            },
-            onValueSelected = onQuickPicksChange,
+            }
         )
+    }
+
+    var showTopLengthDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    if (showTopLengthDialog) {
+        var tempLength by rememberSaveable { mutableStateOf(lengthTop.toFloat()) }
+
+        AlertDialog(
+            onDismissRequest = { showTopLengthDialog = false },
+            title = { Text(stringResource(R.string.top_length)) },
+            text = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(tempLength.toInt().toString())
+                    Slider(
+                        value = tempLength,
+                        onValueChange = { tempLength = it },
+                        valueRange = 1f..100f,
+                        steps = 98
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onLengthTopChange(tempLength.toInt().toString())
+                        showTopLengthDialog = false
+                    }
+                ) {
+                    Text(stringResource(R.string.save))
+                }
+            }
+        )
+    }
+
+    Column(
+        Modifier
+            .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp),
+    ) {
+        Material3SettingsGroup(
+            title = stringResource(R.string.general),
+            items = listOf(
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.language),
+                    title = { Text(stringResource(R.string.content_language)) },
+                    description = {
+                        Text(
+                            LanguageCodeToName.getOrElse(contentLanguage) { stringResource(R.string.system_default) }
+                        )
+                    },
+                    onClick = { showContentLanguageDialog = true }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.location_on),
+                    title = { Text(stringResource(R.string.content_country)) },
+                    description = {
+                        Text(
+                            CountryCodeToName.getOrElse(contentCountry) { stringResource(R.string.system_default) }
+                        )
+                    },
+                    onClick = { showContentCountryDialog = true }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.explicit),
+                    title = { Text(stringResource(R.string.hide_explicit)) },
+                    trailingContent = {
+                        Switch(
+                            checked = hideExplicit,
+                            onCheckedChange = onHideExplicitChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (hideExplicit) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onHideExplicitChange(!hideExplicit) }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.slow_motion_video),
+                    title = { Text(stringResource(R.string.hide_video_songs)) },
+                    trailingContent = {
+                        Switch(
+                            checked = hideVideoSongs,
+                            onCheckedChange = onHideVideoSongsChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (hideVideoSongs) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onHideVideoSongsChange(!hideVideoSongs) }
+                )
+            )
+        )
+
+        Spacer(modifier = Modifier.height(27.dp))
+
+        Material3SettingsGroup(
+            title = stringResource(R.string.artist_page_settings),
+            items = listOf(
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.info),
+                    title = { Text(stringResource(R.string.show_artist_description)) },
+                    trailingContent = {
+                        Switch(
+                            checked = showArtistDescription,
+                            onCheckedChange = onShowArtistDescriptionChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (showArtistDescription) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onShowArtistDescriptionChange(!showArtistDescription) }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.person),
+                    title = { Text(stringResource(R.string.show_artist_subscriber_count)) },
+                    trailingContent = {
+                        Switch(
+                            checked = showArtistSubscriberCount,
+                            onCheckedChange = onShowArtistSubscriberCountChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (showArtistSubscriberCount) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onShowArtistSubscriberCountChange(!showArtistSubscriberCount) }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.person),
+                    title = { Text(stringResource(R.string.show_artist_monthly_listeners)) },
+                    trailingContent = {
+                        Switch(
+                            checked = showMonthlyListeners,
+                            onCheckedChange = onShowMonthlyListenersChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (showMonthlyListeners) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onShowMonthlyListenersChange(!showMonthlyListeners) }
+                )
+            )
+        )
+
+        Spacer(modifier = Modifier.height(27.dp))
+
+        Material3SettingsGroup(
+            title = stringResource(R.string.app_language),
+            items = listOf(
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    Material3SettingsItem(
+                        icon = painterResource(R.drawable.language),
+                        title = { Text(stringResource(R.string.app_language)) },
+                        onClick = {
+                            context.startActivity(
+                                Intent(
+                                    Settings.ACTION_APP_LOCALE_SETTINGS,
+                                    "package:${context.packageName}".toUri()
+                                )
+                            )
+                        }
+                    )
+                } else {
+                    Material3SettingsItem(
+                        icon = painterResource(R.drawable.language),
+                        title = { Text(stringResource(R.string.app_language)) },
+                        description = {
+                            Text(
+                                LanguageCodeToName.getOrElse(appLanguage) { stringResource(R.string.system_default) }
+                            )
+                        },
+                        onClick = { showAppLanguageDialog = true }
+                    )
+                }
+            )
+        )
+
+        Spacer(modifier = Modifier.height(27.dp))
+
+        Material3SettingsGroup(
+            title = stringResource(R.string.proxy),
+            items = buildList {
+                add(
+                    Material3SettingsItem(
+                        icon = painterResource(R.drawable.wifi_proxy),
+                        title = { Text(stringResource(R.string.enable_proxy)) },
+                        trailingContent = {
+                            Switch(
+                                checked = proxyEnabled,
+                                onCheckedChange = onProxyEnabledChange,
+                                thumbContent = {
+                                    Icon(
+                                        painter = painterResource(
+                                            id = if (proxyEnabled) R.drawable.check else R.drawable.close
+                                        ),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(SwitchDefaults.IconSize)
+                                    )
+                                }
+                            )
+                        },
+                        onClick = { onProxyEnabledChange(!proxyEnabled) }
+                    )
+                )
+                if (proxyEnabled) {
+                    add(
+                        Material3SettingsItem(
+                            icon = painterResource(R.drawable.settings),
+                            title = { Text(stringResource(R.string.config_proxy)) },
+                            onClick = { showProxyConfigurationDialog = true }
+                        )
+                    )
+                }
+            }
+        )
+
+        Spacer(modifier = Modifier.height(27.dp))
+
+        Material3SettingsGroup(
+            title = stringResource(R.string.lyrics),
+            items = listOf(
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.lyrics),
+                    title = { Text(stringResource(R.string.enable_lrclib)) },
+                    trailingContent = {
+                        Switch(
+                            checked = enableLrclib,
+                            onCheckedChange = onEnableLrclibChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (enableLrclib) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onEnableLrclibChange(!enableLrclib) }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.lyrics),
+                    title = { Text(stringResource(R.string.enable_kugou)) },
+                    trailingContent = {
+                        Switch(
+                            checked = enableKugou,
+                            onCheckedChange = onEnableKugouChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (enableKugou) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onEnableKugouChange(!enableKugou) }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.lyrics),
+                    title = { Text(stringResource(R.string.enable_better_lyrics)) },
+                    description = { Text(stringResource(R.string.enable_better_lyrics_desc)) },
+                    trailingContent = {
+                        Switch(
+                            checked = enableBetterLyrics,
+                            onCheckedChange = onEnableBetterLyricsChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (enableBetterLyrics) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onEnableBetterLyricsChange(!enableBetterLyrics) }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.lyrics),
+                    title = { Text(stringResource(R.string.enable_simpmusic)) },
+                    description = { Text(stringResource(R.string.enable_simpmusic_desc)) },
+                    trailingContent = {
+                        Switch(
+                            checked = enableSimpMusic,
+                            onCheckedChange = onEnableSimpMusicChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (enableSimpMusic) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onEnableSimpMusicChange(!enableSimpMusic) }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.lyrics),
+                    title = { Text(stringResource(R.string.set_first_lyrics_provider)) },
+                    description = {
+                        Text(
+                            when (preferredProvider) {
+                                PreferredLyricsProvider.LRCLIB -> "LrcLib"
+                                PreferredLyricsProvider.KUGOU -> "KuGou"
+                                PreferredLyricsProvider.BETTER_LYRICS -> "Better Lyrics"
+                                PreferredLyricsProvider.SIMPMUSIC -> "SimpMusic"
+                            }
+                        )
+                    },
+                    onClick = { showPreferredProviderDialog = true }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.language_korean_latin),
+                    title = { Text(stringResource(R.string.lyrics_romanization)) },
+                    onClick = { navController.navigate("settings/content/romanization") }
+                )
+            )
+        )
+
+        Spacer(modifier = Modifier.height(27.dp))
+
+        Material3SettingsGroup(
+            title = "Wrapped",
+            items = listOf(
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.trending_up),
+                    title = { Text(stringResource(R.string.show_wrapped_card)) },
+                    trailingContent = {
+                        Switch(
+                            checked = showWrappedCard,
+                            onCheckedChange = onShowWrappedCardChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (showWrappedCard) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onShowWrappedCardChange(!showWrappedCard) }
+                )
+            )
+        )
+
+        Spacer(modifier = Modifier.height(27.dp))
+
+        Material3SettingsGroup(
+            title = stringResource(R.string.misc),
+            items = listOf(
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.trending_up),
+                    title = { Text(stringResource(R.string.top_length)) },
+                    description = { Text(lengthTop) },
+                    onClick = { showTopLengthDialog = true }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.home_outlined),
+                    title = { Text(stringResource(R.string.set_quick_picks)) },
+                    description = {
+                        Text(
+                            when (quickPicks) {
+                                QuickPicks.QUICK_PICKS -> stringResource(R.string.quick_picks)
+                                QuickPicks.LAST_LISTEN -> stringResource(R.string.last_song_listened)
+                            }
+                        )
+                    },
+                    onClick = { showQuickPicksDialog = true }
+                )
+            )
+        )
+        Spacer(modifier = Modifier.height(16.dp))
     }
 
     TopAppBar(

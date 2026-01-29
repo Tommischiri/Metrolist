@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.ui.screens.artist
 
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -42,7 +47,6 @@ import com.metrolist.music.constants.ArtistSongSortTypeKey
 import com.metrolist.music.constants.CONTENT_TYPE_HEADER
 import com.metrolist.music.constants.HideExplicitKey
 import com.metrolist.music.extensions.toMediaItem
-import com.metrolist.music.extensions.togglePlayPause
 import com.metrolist.music.playback.queues.ListQueue
 import com.metrolist.music.ui.component.HideOnScrollFAB
 import com.metrolist.music.ui.component.IconButton
@@ -66,7 +70,7 @@ fun ArtistSongsScreen(
     val menuState = LocalMenuState.current
     val haptic = LocalHapticFeedback.current
     val playerConnection = LocalPlayerConnection.current ?: return
-    val isPlaying by playerConnection.isPlaying.collectAsState()
+    val isPlaying by playerConnection.isEffectivelyPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(
@@ -154,7 +158,7 @@ fun ArtistSongsScreen(
                         .combinedClickable(
                             onClick = {
                                 if (song.id == mediaMetadata?.id) {
-                                    playerConnection.player.togglePlayPause()
+                                    playerConnection.togglePlayPause()
                                 } else {
                                     playerConnection.playQueue(
                                         ListQueue(

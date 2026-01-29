@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.ui.screens.search
 
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -5,7 +10,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -30,11 +34,9 @@ import com.metrolist.music.LocalDatabase
 import com.metrolist.music.LocalPlayerConnection
 import com.metrolist.music.R
 import com.metrolist.music.constants.SuggestionItemHeight
-import com.metrolist.music.extensions.togglePlayPause
 import com.metrolist.music.models.toMediaMetadata
 import com.metrolist.music.playback.queues.YouTubeQueue
 import com.metrolist.music.ui.component.LocalMenuState
-import com.metrolist.music.ui.component.SearchBarIconOffsetX
 import com.metrolist.music.ui.component.YouTubeListItem
 import com.metrolist.music.ui.menu.*
 import com.metrolist.music.viewmodels.OnlineSearchSuggestionViewModel
@@ -64,7 +66,7 @@ fun OnlineSearchScreen(
     val scope = rememberCoroutineScope()
 
     val haptic = LocalHapticFeedback.current
-    val isPlaying by playerConnection.isPlaying.collectAsState()
+    val isPlaying by playerConnection.isEffectivelyPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val coroutineScope = rememberCoroutineScope()
@@ -136,6 +138,9 @@ fun OnlineSearchScreen(
                     modifier = Modifier.animateItem()
                 )
             }
+            item(key = "search_divider_spacer") {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
         }
 
         items(viewState.items, key = { "item_${it.id}" }) { item ->
@@ -199,7 +204,7 @@ fun OnlineSearchScreen(
                             when (item) {
                                 is SongItem -> {
                                     if (item.id == mediaMetadata?.id) {
-                                        playerConnection.player.togglePlayPause()
+                                        playerConnection.togglePlayPause()
                                     } else {
                                         playerConnection.playQueue(
                                             YouTubeQueue.radio(item.toMediaMetadata())
@@ -284,7 +289,6 @@ fun SuggestionItem(
             .height(SuggestionItemHeight)
             .background(if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface)
             .clickable(onClick = onClick)
-            .padding(end = SearchBarIconOffsetX)
             .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)),
     ) {
         Icon(

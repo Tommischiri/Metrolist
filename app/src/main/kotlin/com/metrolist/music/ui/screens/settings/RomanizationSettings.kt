@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.ui.screens.settings
 
 import android.annotation.TargetApi
@@ -56,6 +61,7 @@ fun RomanizationSettings(
 
     val (lyricsRomanizeJapanese, onLyricsRomanizeJapaneseChange) = rememberPreference(LyricsRomanizeJapaneseKey, defaultValue = true)
     val (lyricsRomanizeKorean, onLyricsRomanizeKoreanChange) = rememberPreference(LyricsRomanizeKoreanKey, defaultValue = true)
+    val (lyricsRomanizeChinese, onLyricsRomanizeChineseChange) = rememberPreference(LyricsRomanizeChineseKey, defaultValue = true)
     val (lyricsRomanizeRussian, onLyricsRomanizeRussianChange) = rememberPreference(LyricsRomanizeRussianKey, defaultValue = true)
     val (lyricsRomanizeUkrainian, onLyricsRomanizeUkrainianChange) = rememberPreference(LyricsRomanizeUkrainianKey, defaultValue = true)
     val (lyricsRomanizeSerbian, onLyricsRomanizeSerbianChange) = rememberPreference(LyricsRomanizeSerbianKey, defaultValue = true)
@@ -85,6 +91,13 @@ fun RomanizationSettings(
             icon = { Icon(painterResource(R.drawable.language_korean_latin), null) },
             checked = lyricsRomanizeKorean,
             onCheckedChange = onLyricsRomanizeKoreanChange,
+        )
+
+        SwitchPreference(
+            title = { Text(stringResource(R.string.lyrics_romanize_chinese)) },
+            icon = { Icon(painterResource(R.drawable.language), null) },
+            checked = lyricsRomanizeChinese,
+            onCheckedChange = onLyricsRomanizeChineseChange,
         )
 
         PreferenceGroupTitle(title = stringResource(R.string.lyrics_romanization_cyrillic))

@@ -28,6 +28,19 @@ If you're in a region where YouTube Music is not supported, you won't be able to
 </div>
 
 <div align="center">
+<h1>Table of Contents</h1>
+</div>
+
+- [Features](#features)
+- [Download Now](#download-now)
+- [FAQ](#faq)
+- [Development Setup](#development-setup)
+- [Translations](#translations)
+- [Support Me](#support-me)
+- [Join our community](#join-our-community)
+- [Contributors](#thanks-to-all-contributors) 
+
+<div align="center">
 <h1>Features</h1>
 </div>
 
@@ -97,10 +110,6 @@ Thank you very much for helping to make Metrolist accessible to many people worl
 2. In the three dots menu at the top-right of the screen, click "Developer settings"
 3. Enable "Unknown sources"
 
-### Q: How to scrobble music to LastFM, LibreFM, ListenBrainz or GNU FM?
-
-Use other music scrobbler apps, I recommend [Pano Scrobbler](https://play.google.com/store/apps/details?id=com.arn.scrobble).
-
 <div align="center">
 <h1>Development Setup</h1>
 </div>
@@ -151,6 +160,16 @@ Or other
 
 **OuterTune**
 [Davide Garberi](https://github.com/DD3Boh) • [Michael Zh](https://github.com/mikooomich)
+
+Credits:
+
+[**Kizzy**](https://github.com/dead8309/Kizzy) – for the Discord Rich Presence implementation and inspiration.
+
+[**Better Lyrics**](https://better-lyrics.boidu.dev) – for beautiful time-synced lyrics with word-by-word highlighting, and seamless YouTube Music integration.
+
+[**SimpMusic Lyrics**](https://github.com/maxrave-dev/SimpMusic) – for providing lyrics data through the SimpMusic Lyrics API.
+
+The open-source community for tools, libraries, and APIs that make this project possible.
 
 <sub>Thank you to all the amazing developers who made this project possible!</sub>
 

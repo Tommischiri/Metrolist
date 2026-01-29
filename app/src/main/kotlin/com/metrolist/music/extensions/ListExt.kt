@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.extensions
 
 import com.metrolist.music.db.entities.Song
@@ -40,6 +45,14 @@ fun <T : Any> List<T>.mergeNearbyElements(
 fun List<Song>.filterExplicit(enabled: Boolean = true) =
     if (enabled) {
         filter { !it.song.explicit }
+    } else {
+        this
+    }
+
+// Extension function to filter video songs for local Song entities
+fun List<Song>.filterVideoSongs(enabled: Boolean = true) =
+    if (enabled) {
+        filter { !it.song.isVideo }
     } else {
         this
     }

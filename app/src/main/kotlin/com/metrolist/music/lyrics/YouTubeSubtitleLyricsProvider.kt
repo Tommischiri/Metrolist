@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.lyrics
 
 import android.content.Context
@@ -13,5 +18,6 @@ object YouTubeSubtitleLyricsProvider : LyricsProvider {
         title: String,
         artist: String,
         duration: Int,
+        album: String?,
     ): Result<String> = YouTube.transcript(id)
 }

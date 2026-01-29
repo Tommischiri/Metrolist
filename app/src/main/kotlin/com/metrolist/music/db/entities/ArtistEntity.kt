@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.db.entities
 
 import androidx.compose.runtime.Immutable
@@ -7,7 +12,6 @@ import androidx.room.PrimaryKey
 import com.metrolist.innertube.YouTube
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.apache.commons.lang3.RandomStringUtils
 import java.time.LocalDateTime
@@ -36,11 +40,10 @@ data class ArtistEntity(
 
     fun toggleLike() = localToggleLike().also {
         CoroutineScope(Dispatchers.IO).launch {
-            if (channelId == null)
-                YouTube.subscribeChannel(YouTube.getChannelId(id), bookmarkedAt == null)
-            else
-                YouTube.subscribeChannel(channelId, bookmarkedAt == null)
-            this.cancel()
+            val targetChannelId = channelId ?: YouTube.getChannelId(id)
+            if (targetChannelId.isNotEmpty()) {
+                YouTube.subscribeChannel(targetChannelId, bookmarkedAt == null)
+            }
         }
     }
 

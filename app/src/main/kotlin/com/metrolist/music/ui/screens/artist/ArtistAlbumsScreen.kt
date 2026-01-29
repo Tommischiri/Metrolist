@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.ui.screens.artist
 
 import androidx.activity.compose.BackHandler
@@ -45,7 +50,10 @@ import com.metrolist.music.LocalPlayerConnection
 import com.metrolist.music.R
 import com.metrolist.music.constants.CONTENT_TYPE_ALBUM
 import com.metrolist.music.constants.CONTENT_TYPE_HEADER
+import com.metrolist.music.constants.GridItemSize
+import com.metrolist.music.constants.GridItemsSizeKey
 import com.metrolist.music.constants.GridThumbnailHeight
+import com.metrolist.music.utils.rememberEnumPreference
 import com.metrolist.music.ui.component.IconButton
 import com.metrolist.music.ui.component.LibraryAlbumGridItem
 import com.metrolist.music.ui.component.LocalMenuState
@@ -61,7 +69,7 @@ fun ArtistAlbumsScreen(
 ) {
     val menuState = LocalMenuState.current
     val playerConnection = LocalPlayerConnection.current ?: return
-    val isPlaying by playerConnection.isPlaying.collectAsState()
+    val isPlaying by playerConnection.isEffectivelyPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val artist by viewModel.artist.collectAsState()
@@ -69,6 +77,7 @@ fun ArtistAlbumsScreen(
 
     val coroutineScope = rememberCoroutineScope()
     val lazyGridState = rememberLazyGridState()
+    val gridItemSize by rememberEnumPreference(GridItemsSizeKey, GridItemSize.BIG)
 
     var inSelectMode by rememberSaveable { mutableStateOf(false) }
     val selection = rememberSaveable(
@@ -92,7 +101,7 @@ fun ArtistAlbumsScreen(
     ) {
         LazyVerticalGrid(
             state = lazyGridState,
-            columns = GridCells.Adaptive(minSize = GridThumbnailHeight + 24.dp),
+            columns = GridCells.Adaptive(minSize = GridThumbnailHeight + if (gridItemSize == GridItemSize.BIG) 24.dp else (-24).dp),
             contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
         ) {
             item(

@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.viewmodels
 
 import android.content.Context
@@ -64,13 +69,14 @@ constructor(
         title: String,
         artist: String,
         duration: Int,
+        album: String? = null,
     ) {
         isLoading.value = true
         results.value = emptyList()
         job?.cancel()
         job =
             viewModelScope.launch(Dispatchers.IO) {
-                lyricsHelper.getAllLyrics(mediaId, title, artist, duration) { result ->
+                lyricsHelper.getAllLyrics(mediaId, title, artist, duration, album) { result ->
                     results.update {
                         it + result
                     }
@@ -90,11 +96,11 @@ constructor(
     ) {
         database.query {
             lyricsEntity?.let(::delete)
-            val lyrics =
+            val lyricsWithProvider =
                 runBlocking {
                     lyricsHelper.getLyrics(mediaMetadata)
                 }
-            upsert(LyricsEntity(mediaMetadata.id, lyrics))
+            upsert(LyricsEntity(mediaMetadata.id, lyricsWithProvider.lyrics, lyricsWithProvider.provider))
         }
     }
 }

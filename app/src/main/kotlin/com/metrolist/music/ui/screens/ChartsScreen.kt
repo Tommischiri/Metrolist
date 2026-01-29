@@ -1,3 +1,8 @@
+/**
+ * Metrolist Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
 package com.metrolist.music.ui.screens
 
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -5,7 +10,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -34,7 +38,6 @@ import com.metrolist.music.LocalPlayerAwareWindowInsets
 import com.metrolist.music.LocalPlayerConnection
 import com.metrolist.music.R
 import com.metrolist.music.constants.ListItemHeight
-import com.metrolist.music.extensions.togglePlayPause
 import com.metrolist.music.models.toMediaMetadata
 import com.metrolist.music.playback.queues.YouTubeQueue
 import com.metrolist.music.ui.component.LocalMenuState
@@ -59,7 +62,7 @@ fun ChartsScreen(
     val menuState = LocalMenuState.current
     val haptic = LocalHapticFeedback.current
     val playerConnection = LocalPlayerConnection.current ?: return
-    val isPlaying by playerConnection.isPlaying.collectAsState()
+    val isPlaying by playerConnection.isEffectivelyPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val chartsPage by viewModel.chartsPage.collectAsState()
@@ -182,7 +185,7 @@ fun ChartsScreen(
                             NavigationTitle(
                                 title = when (section.title) {
                                     "Trending" -> stringResource(R.string.trending)
-                                    else -> section.title ?: stringResource(R.string.charts)
+                                        else -> section.title.ifEmpty { stringResource(R.string.charts) }
                                 },
                                 modifier = Modifier.animateItem(),
                             )
@@ -246,7 +249,7 @@ fun ChartsScreen(
                                                 .combinedClickable(
                                                     onClick = {
                                                         if (song.id == mediaMetadata?.id) {
-                                                            playerConnection.player.togglePlayPause()
+                                                            playerConnection.togglePlayPause()
                                                         } else {
                                                             playerConnection.playQueue(
                                                                 YouTubeQueue(
@@ -301,7 +304,7 @@ fun ChartsScreen(
                                             .combinedClickable(
                                                 onClick = {
                                                     if (video.id == mediaMetadata?.id) {
-                                                        playerConnection.player.togglePlayPause()
+                                                        playerConnection.togglePlayPause()
                                                     } else {
                                                         playerConnection.playQueue(
                                                             YouTubeQueue(
