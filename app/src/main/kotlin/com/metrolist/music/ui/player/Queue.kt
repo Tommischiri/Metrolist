@@ -797,7 +797,11 @@ fun Queue(
                                 )
                             ) {
                                 processedDismiss = true
-                                playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
+                                var l = currentItem.firstPeriodIndex
+                                if (l < playerConnection.service.nextQueueIndex) {
+                                    playerConnection.service.nextQueueIndex--
+                                }
+                                playerConnection.player.removeMediaItem(l)
                                 dismissJob?.cancel()
                                 dismissJob =
                                     coroutineScope.launch {
