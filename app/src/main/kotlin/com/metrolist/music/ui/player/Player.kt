@@ -702,6 +702,7 @@ fun BottomSheetPlayer(
             }
         },
         onDismiss = {
+            playerConnection.service.nextQueueIndex = 1
             playerConnection.service.clearAutomix()
             playerConnection.player.stop()
             playerConnection.player.clearMediaItems()

@@ -64,6 +64,10 @@ import com.metrolist.music.constants.SimilarContent
 import com.metrolist.music.constants.SkipSilenceInstantKey
 import com.metrolist.music.constants.SkipSilenceKey
 import com.metrolist.music.constants.StopMusicOnTaskClearKey
+import com.metrolist.music.constants.HistoryDuration
+import com.metrolist.music.constants.SeekExtraSeconds
+import com.metrolist.music.constants.SpotifyLikeQueueKey
+import com.metrolist.music.ui.component.EnumListPreference
 import com.metrolist.music.ui.component.DefaultDialog
 import com.metrolist.music.ui.component.EnumDialog
 import com.metrolist.music.ui.component.IconButton
@@ -94,6 +98,10 @@ fun PlayerSettings(
     )
     val (crossfadeGapless, onCrossfadeGaplessChange) = rememberPreference(
         CrossfadeGaplessKey,
+        defaultValue = true
+    )
+    val (spotifyLikeQueue, onSpotifyLikeQueue) = rememberPreference(
+        SpotifyLikeQueueKey,
         defaultValue = true
     )
     val (persistentQueue, onPersistentQueueChange) = rememberPreference(
@@ -495,6 +503,27 @@ fun PlayerSettings(
         Material3SettingsGroup(
             title = stringResource(R.string.queue),
             items = listOf(
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.queue_music),
+                    title = { Text(stringResource(R.string.spotify_like_queue)) },
+                    //description = { Text(stringResource(R.string.persistent_queue_desc)) },
+                    trailingContent = {
+                        Switch(
+                            checked = spotifyLikeQueue,
+                            onCheckedChange = onSpotifyLikeQueue,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (spotifyLikeQueue) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onSpotifyLikeQueue(!spotifyLikeQueue) }
+                ),
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.queue_music),
                     title = { Text(stringResource(R.string.persistent_queue)) },
