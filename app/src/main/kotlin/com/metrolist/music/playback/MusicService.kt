@@ -132,6 +132,7 @@ import com.metrolist.music.constants.PreventDuplicateTracksInQueueKey
 import com.metrolist.music.constants.SimilarContent
 import com.metrolist.music.constants.SkipSilenceInstantKey
 import com.metrolist.music.constants.SkipSilenceKey
+import com.metrolist.music.constants.SpotifyLikeQueueKey
 import com.metrolist.music.db.MusicDatabase
 import com.metrolist.music.db.entities.Event
 import com.metrolist.music.db.entities.FormatEntity
@@ -330,6 +331,7 @@ class MusicService :
     private var isCrossfading = false
     private var crossfadeJob: Job? = null
 
+    var nextQueueIndex: Int = 0
     private lateinit var mediaSession: MediaLibrarySession
 
     // Tracks if player has been properly initilized
@@ -425,8 +427,11 @@ class MusicService :
         }
     }
 
+    private var spotifyLikeQueue: Boolean = true
+
     override fun onCreate() {
         super.onCreate()
+        spotifyLikeQueue = dataStore.get(SpotifyLikeQueueKey, true)
         isRunning = true
 
         // Player rediness reset to false
@@ -907,6 +912,7 @@ class MusicService :
                         // player.repeatMode = playerState.repeatMode
                         // player.shuffleModeEnabled = playerState.shuffleModeEnabled
                         playerVolume.value = playerState.volume
+                        nextQueueIndex = playerState.nextQueueIndex
 
                         // Restore position if it's still valid
                         if (playerState.currentMediaItemIndex < player.mediaItemCount) {
@@ -1278,6 +1284,7 @@ class MusicService :
         queue: Queue,
         playWhenReady: Boolean = true,
     ) {
+        nextQueueIndex = 1
         if (!scope.isActive) scope = CoroutineScope(Dispatchers.Main) + Job()
 
         // Safety Check : Ensuring player is initilized
@@ -1548,6 +1555,7 @@ class MusicService :
     fun playNext(items: List<MediaItem>) {
         // If queue is empty or player is idle, play immediately instead
         if (player.mediaItemCount == 0 || player.playbackState == STATE_IDLE) {
+            nextQueueIndex = 1
             player.setMediaItems(items)
             player.prepare()
             // Don't start local playback if casting
@@ -1556,6 +1564,7 @@ class MusicService :
             }
             return
         }
+        nextQueueIndex++
 
         // Remove duplicates if enabled
         if (dataStore.get(PreventDuplicateTracksInQueueKey, false)) {
@@ -1659,7 +1668,16 @@ class MusicService :
             val shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false)
             applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
         }
+        if(spotifyLikeQueue) {
+            if(nextQueueIndex <= player.currentMediaItemIndex) {
+                nextQueueIndex = player.currentMediaItemIndex+1
+            }
+            player.addMediaItems(nextQueueIndex,items)
+        } else {
+            player.addMediaItems(items)
+        }
         player.prepare()
+        nextQueueIndex++
     }
 
     fun toggleLibrary() {
@@ -1888,6 +1906,11 @@ class MusicService :
             }
         }
         previousMediaItemIndex = player.currentMediaItemIndex
+
+
+        if(nextQueueIndex <= player.currentMediaItemIndex) {
+            nextQueueIndex = player.currentMediaItemIndex+1
+        }
 
         lastPlaybackSpeed = -1.0f // force update song
 
@@ -2948,7 +2971,8 @@ class MusicService :
                 volume = player.volume,
                 currentPosition = player.currentPosition,
                 currentMediaItemIndex = player.currentMediaItemIndex,
-                playbackState = player.playbackState
+                playbackState = player.playbackState,
+                nextQueueIndex = nextQueueIndex
             )
 
             runCatching {
