@@ -121,6 +121,7 @@ val AudioOffload = booleanPreferencesKey("enableOffload")
 
 val VarispeedKey = booleanPreferencesKey("varispeed")
 
+val SpotifyLikeQueueKey = booleanPreferencesKey("spotifyLikeQueue")
 val PersistentQueueKey = booleanPreferencesKey("persistentQueue")
 val PersistentShuffleAcrossQueuesKey = booleanPreferencesKey("persistentShuffleAcrossQueues")
 val RememberShuffleAndRepeatKey = booleanPreferencesKey("rememberShuffleAndRepeat")
