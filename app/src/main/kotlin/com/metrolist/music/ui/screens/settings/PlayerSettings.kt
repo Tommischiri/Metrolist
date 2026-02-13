@@ -110,7 +110,7 @@ fun PlayerSettings(
         CrossfadeGaplessKey,
         defaultValue = true
     )
-    val (spotifyLikeQueue, onSpotifyLikeQueue) = rememberPreference(
+    val (spotifyLikeQueue, onSpotifyLikeQueueChange) = rememberPreference(
         SpotifyLikeQueueKey,
         defaultValue = true
     )
@@ -688,7 +688,7 @@ fun PlayerSettings(
                     trailingContent = {
                         Switch(
                             checked = spotifyLikeQueue,
-                            onCheckedChange = onSpotifyLikeQueue,
+                            onCheckedChange = onSpotifyLikeQueueChange,
                             thumbContent = {
                                 Icon(
                                     painter = painterResource(
@@ -700,7 +700,7 @@ fun PlayerSettings(
                             }
                         )
                     },
-                    onClick = { onSpotifyLikeQueue(!spotifyLikeQueue) }
+                    onClick = { onSpotifyLikeQueueChange(!spotifyLikeQueue) }
                 ),
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.queue_music),
