@@ -98,11 +98,9 @@ import com.metrolist.music.R
 import com.metrolist.music.constants.CropAlbumArtKey
 import com.metrolist.music.constants.GridItemSize
 import com.metrolist.music.constants.GridItemsSizeKey
-import com.metrolist.music.constants.BetterSwipeToSongKey
-import com.metrolist.music.constants.HideExplicitKey
+import com.metrolist.music.constants.InvertSwipeToSongKey
 import com.metrolist.music.constants.ListItemHeight
 import com.metrolist.music.constants.GridThumbnailHeight
-import com.metrolist.music.constants.ListItemHeight
 import com.metrolist.music.constants.ListThumbnailSize
 import com.metrolist.music.constants.SmallGridThumbnailHeight
 import com.metrolist.music.constants.SwipeToSongKey
@@ -1593,7 +1591,7 @@ fun SwipeToSongBox(
     val offset = remember { mutableFloatStateOf(0f) }
     val threshold = 300f
 
-    val betterSwipeEnabled by rememberPreference(BetterSwipeToSongKey, defaultValue = false)
+    val betterSwipeEnabled by rememberPreference(InvertSwipeToSongKey, defaultValue = false)
 
     val dragState = rememberDraggableState { delta ->
         offset.floatValue = (offset.floatValue + delta).coerceIn(-threshold, threshold)
