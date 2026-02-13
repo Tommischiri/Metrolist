@@ -194,10 +194,6 @@ android {
             initWith(getByName("release"))
             signingConfig = signingConfigs.getByName("persistentDebug")
         }
-        create("staging") {
-            initWith(getByName("release"))
-            signingConfig = signingConfigs.getByName("persistentDebug")
-        }
     }
 
     compileOptions {
