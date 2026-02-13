@@ -600,7 +600,7 @@
     <string name="ai_error_unexpected">Unexpected translation result</string>
     <string name="ai_error_unknown">Unknown error occurred</string>
     <string name="ai_error_translation_failed">Translation failed</string>
-    
+
     <!-- Crash Handler -->
     <string name="crash_title">App Crashed</string>
     <string name="crash_description">An unexpected error occurred. Please share the crash report to help us fix the issue.</string>
