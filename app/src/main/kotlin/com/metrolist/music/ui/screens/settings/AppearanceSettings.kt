@@ -52,7 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.metrolist.music.LocalPlayerAwareWindowInsets
 import com.metrolist.music.R
-import com.metrolist.music.constants.BetterSwipeToSongKey
+import com.metrolist.music.constants.InvertSwipeToSongKey
 import com.metrolist.music.constants.ChipSortTypeKey
 import com.metrolist.music.constants.CropAlbumArtKey
 import com.metrolist.music.constants.DefaultOpenTabKey
@@ -110,8 +110,6 @@ import kotlinx.coroutines.launch
 import android.content.Intent
 import android.app.Activity
 import androidx.compose.material3.SnackbarHostState
-import com.metrolist.music.constants.BetterSwipeToSongKey
-import com.metrolist.music.constants.CropAlbumArtKey
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -240,8 +238,8 @@ fun AppearanceSettings(
         defaultValue = false
     )
 
-    val (betterSwipeToSong, onBetterSwipeToSongChange) = rememberPreference(
-        BetterSwipeToSongKey,
+    val (invertSwipeToSong, onInvertSwipeToSongChange) = rememberPreference(
+        InvertSwipeToSongKey,
         defaultValue = false
     )
 
@@ -1312,15 +1310,15 @@ fun AppearanceSettings(
                 ),
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.swipe),
-                    title = { Text(stringResource(R.string.better_swipe_song_to_add)) },
+                    title = { Text(stringResource(R.string.invert_swipe_song_to_add)) },
                     trailingContent = {
                         Switch(
-                            checked = betterSwipeToSong,
-                            onCheckedChange = onBetterSwipeToSongChange,
+                            checked = invertSwipeToSong,
+                            onCheckedChange = onInvertSwipeToSongChange,
                             thumbContent = {
                                 Icon(
                                     painter = painterResource(
-                                        id = if (betterSwipeToSong) R.drawable.check else R.drawable.close
+                                        id = if (invertSwipeToSong) R.drawable.check else R.drawable.close
                                     ),
                                     contentDescription = null,
                                     modifier = Modifier.size(SwitchDefaults.IconSize)
@@ -1328,7 +1326,7 @@ fun AppearanceSettings(
                             }
                         )
                     },
-                    onClick = { onBetterSwipeToSongChange(!betterSwipeToSong) }
+                    onClick = { onInvertSwipeToSongChange(!invertSwipeToSong) }
                 ),
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.swipe),
