@@ -5,9 +5,6 @@
 
 package com.metrolist.music.ui.screens.settings
 
-import android.app.Activity
-import android.content.Context
-import android.content.Intent
 import android.os.Build
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
