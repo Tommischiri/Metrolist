@@ -115,6 +115,11 @@ import com.metrolist.music.utils.IconUtils
 import com.metrolist.music.utils.rememberEnumPreference
 import com.metrolist.music.utils.rememberPreference
 import kotlinx.coroutines.launch
+import android.content.Intent
+import android.app.Activity
+import androidx.compose.material3.SnackbarHostState
+import com.metrolist.music.constants.BetterSwipeToSongKey
+import com.metrolist.music.constants.CropAlbumArtKey
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
