@@ -50,6 +50,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -238,7 +239,9 @@ fun Queue(
         state = state,
         modifier = modifier,
         background = {
-            Box(Modifier.fillMaxSize().background(Color.Unspecified))
+            Box(Modifier
+                .fillMaxSize()
+                .background(Color.Unspecified))
         },
         collapsedContent = {
             if (useNewPlayerDesign) {
@@ -682,6 +685,16 @@ fun Queue(
                     items = mutableQueueWindows,
                     key = { _, item -> item.uid.hashCode() },
                 ) { index, window ->
+                    if(index != 0 && index == playerConnection.service.nextQueueIndex) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(
+                                horizontal = 16.dp,
+                                vertical = 8.dp
+                            ),
+                            thickness = 1.dp,
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                        )
+                    }
                     ReorderableItem(
                         state = reorderableState,
                         key = window.uid.hashCode(),
@@ -817,15 +830,21 @@ fun Queue(
                                                     } else {
                                                         if (isCasting) {
                                                             val mediaId = window.mediaItem.mediaId
-                                                            val navigated = castHandler?.navigateToMediaIfInQueue(mediaId) ?: false
+                                                            val navigated =
+                                                                castHandler?.navigateToMediaIfInQueue(
+                                                                    mediaId
+                                                                ) ?: false
                                                             if (!navigated) {
-                                                                playerConnection.player.seekToDefaultPosition(window.firstPeriodIndex)
+                                                                playerConnection.player.seekToDefaultPosition(
+                                                                    window.firstPeriodIndex
+                                                                )
                                                             }
                                                         } else {
                                                             playerConnection.player.seekToDefaultPosition(
                                                                 window.firstPeriodIndex,
                                                             )
-                                                            playerConnection.player.playWhenReady = true
+                                                            playerConnection.player.playWhenReady =
+                                                                true
                                                         }
                                                     }
                                                 }
@@ -942,7 +961,7 @@ fun Queue(
         Column(
             modifier =
             Modifier
-                .clickable (
+                .clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
                 ) { }
@@ -1167,10 +1186,10 @@ fun Queue(
             Modifier
                 .padding(
                     bottom =
-                    ListItemHeight +
-                            WindowInsets.systemBars
-                                .asPaddingValues()
-                                .calculateBottomPadding(),
+                        ListItemHeight +
+                                WindowInsets.systemBars
+                                    .asPaddingValues()
+                                    .calculateBottomPadding(),
                 )
                 .align(Alignment.BottomCenter),
         )
@@ -1199,15 +1218,19 @@ private fun PlayerQueueButton(
     val alphaFactor = if (enabled) 1f else 0.35f
 
     val appliedModifier = if (isActive) {
-        modifier.then(buttonModifier.background(textButtonColor)).alpha(alphaFactor)
+        modifier
+            .then(buttonModifier.background(textButtonColor))
+            .alpha(alphaFactor)
     } else {
-        modifier.then(
-            buttonModifier.border(
-                width = 1.dp,
-                color = textButtonColor.copy(alpha = 0.3f),
-                shape = shape
+        modifier
+            .then(
+                buttonModifier.border(
+                    width = 1.dp,
+                    color = textButtonColor.copy(alpha = 0.3f),
+                    shape = shape
+                )
             )
-        ).alpha(alphaFactor)
+            .alpha(alphaFactor)
     }
 
     Box(
