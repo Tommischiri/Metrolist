@@ -267,11 +267,6 @@ fun AppearanceSettings(
         defaultValue = false
     )
 
-    val (betterSwipeToSong, onBetterSwipeToSongChange) = rememberPreference(
-        BetterSwipeToSongKey,
-        defaultValue = false
-    )
-
     val (invertSwipeToSong, onInvertSwipeToSongChange) = rememberPreference(
         InvertSwipeToSongKey,
         defaultValue = false
