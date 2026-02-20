@@ -486,7 +486,6 @@ class MusicService :
 
     private var spotifyLikeQueue: Boolean = true
 
-    private var spotifyLikeQueue: Boolean = true
 
     override fun onCreate() {
         super.onCreate()
