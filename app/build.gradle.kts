@@ -193,6 +193,7 @@ android {
         create("staging") {
             initWith(getByName("release"))
             signingConfig = signingConfigs.getByName("persistentDebug")
+            matchingFallbacks += listOf("release", "debug")
         }
     }
 
