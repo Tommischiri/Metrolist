@@ -31,6 +31,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.metrolist.innertube.YouTube
+import com.metrolist.innertube.pages.PlaylistPage
+import com.metrolist.innertube.utils.completed
 import com.metrolist.innertube.utils.parseCookieString
 import com.metrolist.music.LocalDatabase
 import com.metrolist.music.R
@@ -51,6 +53,7 @@ import com.metrolist.music.utils.rememberPreference
 import com.metrolist.music.viewmodels.PlaylistsViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlin.onSuccess
 
 @Composable
 fun AddToPlaylistDialog(
@@ -152,11 +155,37 @@ fun AddToPlaylistDialog(
                                 showDuplicateDialog = true
                             } else {
                                 onDismiss()
+
+                                val moveFrom = playlist.songCount + songIds!!.size -1
                                 database.addSongToPlaylist(playlist, songIds!!)
 
                                 playlist.playlist.browseId?.let { plist ->
                                     songIds?.forEach {
                                         YouTube.addToPlaylist(plist, it)
+                                    }
+                                    if(playlist.songCount > 0) {
+                                        viewModel.syncUtils.withRetry {
+                                            YouTube.playlist(plist).completed()
+                                        }.onSuccess { result ->
+                                            result.onSuccess { out: PlaylistPage ->
+                                                repeat(songIds!!.size) {
+                                                    database.move(playlist.playlist.id, moveFrom, 0)
+                                                }
+                                                var temp = mutableListOf<String>()
+                                                for(i in 0 until songIds!!.size) {
+                                                    temp.add(out.songs.getOrNull(playlist.songCount+i)!!.setVideoId!!)
+                                                }
+                                                temp.add(out.songs.getOrNull(0)!!.setVideoId!!)
+                                                for(i in 0 until temp.size-1) {
+                                                    YouTube.moveSongPlaylist(
+                                                        plist,
+                                                        temp[i],
+                                                        temp[i+1]
+                                                    )
+                                                }
+                                            }
+                                        }
+
                                     }
                                 }
                             }
