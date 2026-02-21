@@ -33,7 +33,7 @@ class PlaylistsViewModel
 constructor(
     @ApplicationContext context: Context,
     database: MusicDatabase,
-    private val syncUtils: SyncUtils,
+    val syncUtils: SyncUtils,
 ) : ViewModel() {
     val allPlaylists =
         context.dataStore.data
