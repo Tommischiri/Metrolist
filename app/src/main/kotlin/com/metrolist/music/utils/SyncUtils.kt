@@ -171,7 +171,7 @@ class SyncUtils @Inject constructor(
         }
     }
 
-    private suspend fun <T> withRetry(
+    suspend fun <T> withRetry(
         maxRetries: Int = MAX_RETRIES,
         initialDelay: Long = INITIAL_RETRY_DELAY_MS,
         block: suspend () -> T
