@@ -52,6 +52,7 @@ import com.metrolist.music.utils.rememberEnumPreference
 import com.metrolist.music.utils.rememberPreference
 import com.metrolist.music.viewmodels.PlaylistsViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.onSuccess
 
@@ -163,6 +164,7 @@ fun AddToPlaylistDialog(
                                     songIds?.forEach {
                                         YouTube.addToPlaylist(plist, it)
                                     }
+                                    delay(4000)
                                     if(playlist.songCount > 0) {
                                         viewModel.syncUtils.withRetry {
                                             YouTube.playlist(plist).completed()
