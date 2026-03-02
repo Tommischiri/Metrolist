@@ -157,6 +157,7 @@ fun AddToPlaylistDialog(
                             } else {
                                 onDismiss()
 
+                                val songCountBefore = playlist.songCount;
                                 val moveFrom = playlist.songCount + songIds!!.size -1
                                 database.addSongToPlaylist(playlist, songIds!!)
 
@@ -164,8 +165,8 @@ fun AddToPlaylistDialog(
                                     songIds?.forEach {
                                         YouTube.addToPlaylist(plist, it)
                                     }
-                                    delay(4000)
-                                    if(playlist.songCount > 0) {
+                                    if(songCountBefore > 0) {
+                                        delay(4000)
                                         viewModel.syncUtils.withRetry {
                                             YouTube.playlist(plist).completed()
                                         }.onSuccess { result ->
@@ -175,7 +176,7 @@ fun AddToPlaylistDialog(
                                                 }
                                                 var temp = mutableListOf<String>()
                                                 for(i in 0 until songIds!!.size) {
-                                                    temp.add(out.songs.getOrNull(playlist.songCount+i)!!.setVideoId!!)
+                                                    temp.add(out.songs.getOrNull(songCountBefore+i)!!.setVideoId!!)
                                                 }
                                                 temp.add(out.songs.getOrNull(0)!!.setVideoId!!)
                                                 for(i in 0 until temp.size-1) {
