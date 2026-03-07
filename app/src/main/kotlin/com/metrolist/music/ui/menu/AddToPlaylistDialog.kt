@@ -5,6 +5,7 @@
 
 package com.metrolist.music.ui.menu
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
@@ -30,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.viewModelScope
 import com.metrolist.innertube.YouTube
 import com.metrolist.innertube.pages.PlaylistPage
 import com.metrolist.innertube.utils.completed
@@ -303,7 +305,7 @@ fun AddToPlaylistDialog(
                     .background(rowBg)
                     .clickable {
                         selectedPlaylist = playlist
-                        coroutineScope.launch(Dispatchers.IO) {
+                        viewModel.viewModelScope.launch(Dispatchers.IO) {
                             if (songIds == null) {
                                 songIds = onGetSong(playlist)
                             }
