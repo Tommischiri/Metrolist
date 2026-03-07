@@ -136,10 +136,10 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 import kotlin.math.roundToInt
 import com.metrolist.music.constants.SleepTimerDefaultKey
 import android.widget.Toast
+import com.metrolist.music.constants.SpotifyLikeQueueKey
 import androidx.compose.runtime.derivedStateOf
 import com.metrolist.music.constants.SleepTimerFadeOutKey
 import com.metrolist.music.constants.SleepTimerStopAfterCurrentSongKey
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.material3.Button
 
 
@@ -221,6 +221,8 @@ fun Queue(
             UseNewPlayerDesignKey,
             defaultValue = true,
         )
+
+    val spotifyLikeQueue = rememberPreference(SpotifyLikeQueueKey, true);
 
     val snackbarHostState = remember { SnackbarHostState() }
     var dismissJob: Job? by remember { mutableStateOf(null) }
@@ -775,7 +777,7 @@ fun Queue(
                     items = mutableQueueWindows,
                     key = { _, item -> item.uid.hashCode() },
                 ) { index, window ->
-                    if(index != 0 && index == playerConnection.service.nextQueueIndex) {
+                    if(spotifyLikeQueue.value && index != 0 && index == playerConnection.service.nextQueueIndex) {
                         HorizontalDivider(
                             modifier = Modifier.padding(
                                 horizontal = 16.dp,
