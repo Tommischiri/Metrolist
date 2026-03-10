@@ -808,6 +808,7 @@ fun SelectionMediaMetadataMenu(
                                     clearAction()
                                 }
                             )
+                        )
                         }
                         if (!isGuest) {
                             add(
