@@ -69,7 +69,6 @@ import com.metrolist.music.constants.VarispeedKey
 import com.metrolist.music.constants.HistoryDuration
 import com.metrolist.music.constants.SeekExtraSeconds
 import com.metrolist.music.constants.SpotifyLikeQueueKey
-import com.metrolist.music.ui.component.EnumListPreference
 import com.metrolist.music.ui.component.DefaultDialog
 import com.metrolist.music.ui.component.EnumDialog
 import com.metrolist.music.ui.component.IconButton
