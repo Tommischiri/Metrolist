@@ -129,6 +129,8 @@ fun AddToPlaylistDialog(
     }
 
     suspend fun addSongsAndSync(targetPlaylist: Playlist, ids: List<String>) {
+        val songCountBefore = targetPlaylist.songCount;
+        val moveFrom = targetPlaylist.songCount + songIds!!.size -1
         database.addSongsToPlaylist(targetPlaylist, ids.map { it to null }, prepend = true)
         targetPlaylist.playlist.browseId?.let { plist ->
             ids.forEach { songId ->
@@ -138,6 +140,31 @@ fun AddToPlaylistDialog(
                 } finally {
                     syncUtils.unregisterPendingAdd(plist, songId)
                 }
+            }
+            delay(600)
+            if(songCountBefore > 0) {
+                viewModel.syncUtils.withRetry {
+                    YouTube.playlist(plist).completed()
+                }.onSuccess { result ->
+                    result.onSuccess { out: PlaylistPage ->
+                        repeat(songIds!!.size) {
+                            database.move(targetPlaylist.playlist.id, moveFrom, 0)
+                        }
+                        var temp = mutableListOf<String>()
+                        for(i in 0 until songIds!!.size) {
+                            temp.add(out.songs.getOrNull(songCountBefore+i)!!.setVideoId!!)
+                        }
+                        temp.add(out.songs.getOrNull(0)!!.setVideoId!!)
+                        for(i in 0 until temp.size-1) {
+                            YouTube.moveSongPlaylist(
+                                plist,
+                                temp[i],
+                                temp[i+1]
+                            )
+                        }
+                    }
+                }
+
             }
         }
     }
